@@ -15,7 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * A simple functional test for the 'com.opencastsoftware.gradle.bsp.greeting' plugin.
+ * A simple functional test for the 'com.opencastsoftware.gradle.bsp' plugin.
  */
 class GradleBspPluginFunctionalTest {
     @TempDir
@@ -33,7 +33,7 @@ class GradleBspPluginFunctionalTest {
         writeString(getSettingsFile(), "");
         writeString(getBuildFile(),
             "plugins {" +
-            "  id('com.opencastsoftware.gradle.bsp.greeting')" +
+            "  id('com.opencastsoftware.gradle.bsp')" +
             "}");
 
         // Run the build
@@ -45,7 +45,7 @@ class GradleBspPluginFunctionalTest {
         BuildResult result = runner.build();
 
         // Verify the result
-        assertTrue(result.getOutput().contains("Hello from plugin 'com.opencastsoftware.gradle.bsp.greeting'"));
+        assertTrue(result.getOutput().contains("Hello from plugin 'com.opencastsoftware.gradle.bsp'"));
     }
 
     private void writeString(File file, String string) throws IOException {
