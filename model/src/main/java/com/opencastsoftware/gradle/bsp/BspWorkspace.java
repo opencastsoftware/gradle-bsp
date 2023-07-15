@@ -1,5 +1,5 @@
 package com.opencastsoftware.gradle.bsp;
 
-public interface BspProject  {
+public interface BspWorkspace {
 
 }

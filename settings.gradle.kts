@@ -1,9 +1,8 @@
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.4.0"
-}
-
 rootProject.name = "gradle-bsp"
 
 include("model")
+project(":model").name = "gradle-bsp-model"
 include("plugin")
+project(":plugin").name = "gradle-bsp-plugin"
 include("server")
+project(":server").name = "gradle-bsp-server"

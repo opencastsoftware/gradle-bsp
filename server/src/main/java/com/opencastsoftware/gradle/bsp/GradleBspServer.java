@@ -16,7 +16,7 @@ public class GradleBspServer implements BuildServer {
 
     private int exitCode = ExitCode.OK;
     private BuildClient client;
-    private AtomicReference<BspProject> projectModel;
+    private AtomicReference<BspWorkspace> workspaceModel;
 
     private ThreadFactory threadFactory = new ThreadFactoryBuilder()
             .setDaemon(true)
@@ -28,8 +28,8 @@ public class GradleBspServer implements BuildServer {
 
     private ExecutorService executor = Executors.newCachedThreadPool(threadFactory);
 
-    public GradleBspServer(BspProject projectModel) {
-        this.projectModel = new AtomicReference<>(projectModel);
+    public GradleBspServer(BspWorkspace workspaceModel) {
+        this.workspaceModel = new AtomicReference<>(workspaceModel);
     }
 
     public ExecutorService getExecutor() {

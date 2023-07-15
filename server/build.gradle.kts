@@ -1,11 +1,13 @@
 plugins {
     java
     application
+    alias(libs.plugins.gradleJavaConventions)
     // This isn't working yet because Gradle can't install the native-image tool for some reason
     // alias(libs.plugins.graalVmNativeImage)
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven { url = uri("https://repo.gradle.org/gradle/libs-releases") }
 }
@@ -20,7 +22,7 @@ java {
 
 dependencies {
     // Gradle Tooling API model
-    implementation(project(":model"))
+    implementation(project(":gradle-bsp-model"))
     // Gradle Tooling API
     implementation(libs.gradleToolingApi)
     // Build Server Protocol bindings
@@ -33,10 +35,13 @@ dependencies {
 }
 
 tasks.withType<JavaCompile> {
-	val compilerArgs = options.compilerArgs
-	compilerArgs.add("-Aproject=${project.group}/${project.name}")
+    val compilerArgs = options.compilerArgs
+    compilerArgs.add("-Aproject=${project.group}/${project.name}")
 }
 
-application {
-    mainClass.set("com.opencastsoftware.gradle.bsp.GradleBspServerLauncher")
+application { mainClass.set("com.opencastsoftware.gradle.bsp.GradleBspServerLauncher") }
+
+tasks.named("run") {
+    dependsOn(":gradle-bsp-model:publishToMavenLocal")
+    dependsOn(":gradle-bsp-plugin:publishToMavenLocal")
 }

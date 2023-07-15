@@ -1,27 +1,66 @@
+/*
+ * SPDX-FileCopyrightText:  © 2023 Opencast Software Europe Ltd <https://opencastsoftware.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package com.opencastsoftware.gradle.bsp;
 
-import java.nio.file.Paths;
-import java.util.concurrent.Callable;
-
-import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
-import org.gradle.tooling.model.gradle.BasicGradleProject;
-import org.gradle.tooling.model.idea.IdeaProject;
+import org.gradle.tooling.model.gradle.GradleBuild;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import ch.epfl.scala.bsp4j.BuildClient;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 @Command(name = "Gradle BSP Server", mixinStandardHelpOptions = true)
 public class GradleBspServerLauncher implements Callable<Integer> {
     private static Logger logger = LoggerFactory.getLogger(GradleBspServerLauncher.class);
+    private static Path initScriptPath;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+        initScriptPath = createInitScript();
         int exitCode = new CommandLine(new GradleBspServerLauncher()).execute(args);
         System.exit(exitCode);
+    }
+
+    private Path findProjectRoot() {
+        var currentDir = Paths.get(".")
+                .toAbsolutePath()
+                .normalize();
+
+        var parentDir = currentDir.getParent();
+
+        while (Files.exists(parentDir.resolve("settings.gradle")) ||
+                Files.exists(parentDir.resolve("settings.gradle.kts"))) {
+            currentDir = parentDir;
+            parentDir = parentDir.getParent();
+        }
+
+        return currentDir;
+    }
+
+    private static Path createInitScript() throws IOException {
+        var initScriptPath = Files.createTempFile("init", ".gradle.kts");
+        var initGradleStream = GradleBspServerLauncher.class.getResourceAsStream("/init.gradle.kts");
+        try (var reader = new BufferedReader(new InputStreamReader(initGradleStream))) {
+            Files.write(initScriptPath, reader.lines().collect(Collectors.toList()));
+        }
+        return initScriptPath;
+    }
+
+    private <T> T getCustomModel(ProjectConnection connection, Class<T> customModelClass) {
+        return connection.model(customModelClass)
+            .addArguments("--init-script", initScriptPath.toString())
+            .get();
     }
 
     @Override
@@ -30,25 +69,28 @@ public class GradleBspServerLauncher implements Callable<Integer> {
             logger.error("Uncaught exception in thread {}", t.getName(), ex);
         });
 
-        ProjectConnection gradleConnection = GradleConnector.newConnector()
-            .forProjectDirectory(Paths.get(".").toFile())
-            .useGradleVersion("8.1-20230208002420+0000")
-            .connect();
+        var connector = GradleConnector.newConnector()
+                .forProjectDirectory(findProjectRoot().toFile());
 
-        BasicGradleProject projectModel = gradleConnection.getModel(BasicGradleProject.class);
+        try (ProjectConnection connection = connector.connect()) {
+            var workspaceModel = getCustomModel(connection, BspWorkspace.class);
 
-        var server = new GradleBspServer(null);
+            System.err.println(workspaceModel);
 
-        var launcher = new Launcher.Builder<BuildClient>()
-            .setInput(System.in)
-            .setOutput(System.out)
-            .setLocalService(server)
-            .setRemoteInterface(BuildClient.class)
-            .create();
+            // var server = new GradleBspServer(null);
 
-        server.onConnectWithClient(launcher.getRemoteProxy());
-        launcher.startListening().get();
-        var exitCode = server.getExitCode();
-        return exitCode;
+            // var launcher = new Launcher.Builder<BuildClient>()
+            // .setInput(System.in)
+            // .setOutput(System.out)
+            // .setLocalService(server)
+            // .setRemoteInterface(BuildClient.class)
+            // .create();
+
+            // server.onConnectWithClient(launcher.getRemoteProxy());
+            // launcher.startListening().get();
+            // var exitCode = server.getExitCode();
+            // return exitCode;
+            return 0;
+        }
     }
 }
