@@ -1,12 +1,9 @@
-import com.vanniktech.maven.publish.GradlePlugin
-import com.vanniktech.maven.publish.JavadocJar
-
 plugins {
     `java-gradle-plugin`
     alias(libs.plugins.gradleJavaConventions)
 }
 
-group = "com.opencastsoftware"
+group = "com.opencastsoftware.gradle"
 
 description = "A Gradle plugin providing models for the Build Server Protocol"
 
@@ -43,6 +40,8 @@ testing {
 tasks.check { dependsOn(testing.suites.named("functionalTest")) }
 
 mavenPublishing {
+    coordinates("com.opencastsoftware.gradle", "gradle-bsp-plugin", project.version.toString())
+
     pom {
         description.set(project.description)
         url.set("https://github.com/opencastsoftware/gradle-bsp")
@@ -77,12 +76,8 @@ mavenPublishing {
             url.set("https://github.com/opencastsoftware/gradle-bsp/issues")
         }
         scm {
-            connection.set(
-                "scm:git:https://github.com/opencastsoftware/gradle-bsp.git"
-            )
-            developerConnection.set(
-                "scm:git:git@github.com:opencastsoftware/gradle-bsp.git"
-            )
+            connection.set("scm:git:https://github.com/opencastsoftware/gradle-bsp.git")
+            developerConnection.set("scm:git:git@github.com:opencastsoftware/gradle-bsp.git")
             url.set("https://github.com/opencastsoftware/gradle-bsp")
         }
     }

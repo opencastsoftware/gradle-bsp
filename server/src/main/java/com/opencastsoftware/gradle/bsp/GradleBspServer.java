@@ -1,22 +1,24 @@
+/*
+ * SPDX-FileCopyrightText:  © 2023 Opencast Software Europe Ltd <https://opencastsoftware.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package com.opencastsoftware.gradle.bsp;
+
+import ch.epfl.scala.bsp4j.*;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import picocli.CommandLine.ExitCode;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import ch.epfl.scala.bsp4j.*;
-import picocli.CommandLine.ExitCode;
 
 public class GradleBspServer implements BuildServer {
     private static Logger logger = LoggerFactory.getLogger(GradleBspServer.class);
 
     private int exitCode = ExitCode.OK;
     private BuildClient client;
-    private AtomicReference<BspWorkspace> workspaceModel;
+    private final AtomicReference<BspWorkspace> workspaceModel;
 
     private ThreadFactory threadFactory = new ThreadFactoryBuilder()
             .setDaemon(true)

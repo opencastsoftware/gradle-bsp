@@ -6,7 +6,6 @@ package com.opencastsoftware.gradle.bsp;
 
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
-import org.gradle.tooling.model.gradle.GradleBuild;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -52,7 +51,10 @@ public class GradleBspServerLauncher implements Callable<Integer> {
         var initScriptPath = Files.createTempFile("init", ".gradle.kts");
         var initGradleStream = GradleBspServerLauncher.class.getResourceAsStream("/init.gradle.kts");
         try (var reader = new BufferedReader(new InputStreamReader(initGradleStream))) {
-            Files.write(initScriptPath, reader.lines().collect(Collectors.toList()));
+            var initGradleLines = reader.lines()
+                    .map(line -> line.replace("%%BSP_PLUGIN_VERSION%%", BuildInfo.version))
+                    .collect(Collectors.toList());
+            Files.write(initScriptPath, initGradleLines);
         }
         return initScriptPath;
     }

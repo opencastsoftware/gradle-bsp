@@ -2,8 +2,18 @@ plugins {
     java
     application
     alias(libs.plugins.gradleJavaConventions)
+    alias(libs.plugins.gradleBuildInfo)
     // This isn't working yet because Gradle can't install the native-image tool for some reason
     // alias(libs.plugins.graalVmNativeImage)
+}
+
+group = "com.opencastsoftware.gradle"
+
+buildInfo {
+    packageName.set("com.opencastsoftware.gradle.bsp")
+    properties.set(
+        mapOf("version" to project.version.toString(), "bspVersion" to libs.versions.bsp4j.get())
+    )
 }
 
 repositories {
@@ -11,6 +21,8 @@ repositories {
     mavenCentral()
     maven { url = uri("https://repo.gradle.org/gradle/libs-releases") }
 }
+
+spotless { java { targetExclude("build/**") } }
 
 java {
     toolchain {
@@ -45,3 +57,5 @@ tasks.named("run") {
     dependsOn(":gradle-bsp-model:publishToMavenLocal")
     dependsOn(":gradle-bsp-plugin:publishToMavenLocal")
 }
+
+tasks.withType<Jar> { dependsOn("generateBuildInfo") }
