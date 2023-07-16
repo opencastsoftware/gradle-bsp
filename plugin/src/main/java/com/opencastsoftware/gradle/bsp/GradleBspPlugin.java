@@ -11,9 +11,6 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import javax.inject.Inject;
 
-/**
- * A simple 'hello world' plugin.
- */
 public class GradleBspPlugin implements Plugin<Project> {
     private final ToolingModelBuilderRegistry builderRegistry;
 
@@ -34,7 +31,7 @@ public class GradleBspPlugin implements Plugin<Project> {
         }
 
         @Override
-        public Object buildAll(String modelName, Project project) {
+        public BspWorkspace buildAll(String modelName, Project project) {
             return new DefaultBspWorkspace();
         }
     }
