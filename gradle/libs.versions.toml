@@ -1,7 +1,7 @@
 [versions]
 bsp4j = "2.0.0"
 graalVmNativeImagePlugin = "0.9.20"
-gradleBuildInfo = "0.2.1"
+gradleBuildInfo = "0.3.1"
 gradleJavaConventions = "0.1.4"
 gradleToolingApi = "8.2"
 jacoco = "0.8.8"
