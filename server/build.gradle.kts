@@ -23,7 +23,7 @@ java {
 }
 
 buildInfo {
-    packageName.set("com.opencastsoftware.gradle.bsp")
+    packageName.set("com.opencastsoftware.gradle.bsp.server")
     properties.set(
         mapOf("version" to project.version.toString(), "bspVersion" to libs.versions.bsp4j.get())
     )
@@ -54,11 +54,53 @@ tasks.withType<JavaCompile> {
     compilerArgs.add("-Aproject=${project.group}/${project.name}")
 }
 
-application { mainClass.set("com.opencastsoftware.gradle.bsp.GradleBspServerLauncher") }
+application { mainClass.set("com.opencastsoftware.gradle.bsp.server.GradleBspServerLauncher") }
 
 tasks.named("run") {
     dependsOn(":gradle-bsp-model:publishToMavenLocal")
     dependsOn(":gradle-bsp-plugin:publishToMavenLocal")
 }
 
-tasks.withType<Jar> { dependsOn("generateBuildInfo") }
+mavenPublishing {
+    coordinates("com.opencastsoftware.gradle", "gradle-bsp-server", project.version.toString())
+
+    pom {
+        description.set(project.description)
+        url.set("https://github.com/opencastsoftware/gradle-bsp")
+        inceptionYear.set("2023")
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("repo")
+            }
+        }
+        organization {
+            name.set("Opencast Software Europe Ltd")
+            url.set("https://opencastsoftware.com")
+        }
+        developers {
+            developer {
+                id.set("DavidGregory084")
+                name.set("David Gregory")
+                organization.set("Opencast Software Europe Ltd")
+                organizationUrl.set("https://opencastsoftware.com/")
+                timezone.set("Europe/London")
+                url.set("https://github.com/DavidGregory084")
+            }
+        }
+        ciManagement {
+            system.set("Github Actions")
+            url.set("https://github.com/opencastsoftware/gradle-bsp/actions")
+        }
+        issueManagement {
+            system.set("GitHub")
+            url.set("https://github.com/opencastsoftware/gradle-bsp/issues")
+        }
+        scm {
+            connection.set("scm:git:https://github.com/opencastsoftware/gradle-bsp.git")
+            developerConnection.set("scm:git:git@github.com:opencastsoftware/gradle-bsp.git")
+            url.set("https://github.com/opencastsoftware/gradle-bsp")
+        }
+    }
+}

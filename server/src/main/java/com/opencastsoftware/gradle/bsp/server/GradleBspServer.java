@@ -2,9 +2,10 @@
  * SPDX-FileCopyrightText:  © 2023 Opencast Software Europe Ltd <https://opencastsoftware.com>
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.opencastsoftware.gradle.bsp;
+package com.opencastsoftware.gradle.bsp.server;
 
 import ch.epfl.scala.bsp4j.*;
+import com.opencastsoftware.gradle.bsp.model.BspWorkspace;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;

@@ -5,6 +5,7 @@ gradleBuildInfo = "0.3.1"
 gradleJavaConventions = "0.1.4"
 gradleToolingApi = "8.2.1"
 jacoco = "0.8.8"
+jsonJava = "20230618"
 junit = "5.9.3"
 junixSocket = "2.6.2"
 logback = "1.4.8"
@@ -14,6 +15,7 @@ slf4j = "2.0.7"
 [libraries]
 bsp4j = { module = "ch.epfl.scala:bsp4j", version.ref = "bsp4j" }
 gradleToolingApi = { module = "org.gradle:gradle-tooling-api", version.ref = "gradleToolingApi" }
+jsonJava = { module = "org.json:json", version.ref = "jsonJava" }
 julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 junitJupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junixSocket = { module = "com.kohlschutter.junixsocket:junixsocket-core", version.ref = "junixSocket" }

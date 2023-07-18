@@ -7,12 +7,25 @@ plugins {
 
 group = "com.opencastsoftware.gradle"
 
-description = "A Gradle plugin registering custom tooling models for the Build Server Protocol"
+description =
+    "A Gradle plugin providing connection file generation and custom tooling models for the Build Server Protocol"
 
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(11)) } }
 
+buildInfo {
+    packageName.set("com.opencastsoftware.gradle.bsp")
+    properties.set(
+        mapOf(
+            "version" to project.version.toString(),
+            "bspVersion" to libs.versions.bsp4j.get(),
+            "jsonJavaVersion" to libs.versions.jsonJava.get()
+        )
+    )
+}
+
 dependencies {
     api(project(":gradle-bsp-model"))
+    compileOnly(libs.jsonJava)
     testImplementation(libs.junitJupiter)
 }
 
