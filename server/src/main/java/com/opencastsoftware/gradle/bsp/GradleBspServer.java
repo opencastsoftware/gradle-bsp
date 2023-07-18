@@ -5,33 +5,81 @@
 package com.opencastsoftware.gradle.bsp;
 
 import ch.epfl.scala.bsp4j.*;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.eclipse.lsp4j.jsonrpc.CancelChecker;
+import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseError;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
+import org.gradle.tooling.ProjectConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ExitCode;
 
+import java.nio.file.Path;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 public class GradleBspServer implements BuildServer {
-    private static Logger logger = LoggerFactory.getLogger(GradleBspServer.class);
+    private static final Logger logger = LoggerFactory.getLogger(GradleBspServer.class);
 
     private int exitCode = ExitCode.OK;
     private BuildClient client;
+
+    private final Path initScriptPath;
+
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
+    private final AtomicReference<ProjectConnection> gradleConnection;
     private final AtomicReference<BspWorkspace> workspaceModel;
+    private final AtomicReference<BuildClientCapabilities> clientCapabilities = new AtomicReference<>();
 
-    private ThreadFactory threadFactory = new ThreadFactoryBuilder()
-            .setDaemon(true)
-            .setNameFormat("gradle-buildserver-%d")
-            .setUncaughtExceptionHandler((t, ex) -> {
-                logger.error("Uncaught exception in thread {}", t.getName(), ex);
-            })
-            .build();
+    private final ThreadFactory threadFactory = new ThreadFactory() {
+        private final AtomicLong count = new AtomicLong(0);
+        private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler = (t, ex) -> {
+            logger.error("Uncaught exception in thread {}", t.getName(), ex);
+        };
 
-    private ExecutorService executor = Executors.newCachedThreadPool(threadFactory);
+        @Override
+        public Thread newThread(Runnable runnable) {
+            var thread = Executors.defaultThreadFactory().newThread(runnable);
+            thread.setDaemon(true);
+            thread.setName(String.format("gradle-buildserver-%d", count.getAndIncrement()));
+            thread.setUncaughtExceptionHandler(uncaughtExceptionHandler);
+            return thread;
+        }
+    };
 
-    public GradleBspServer(BspWorkspace workspaceModel) {
-        this.workspaceModel = new AtomicReference<>(workspaceModel);
+    private final ExecutorService executor = Executors.newCachedThreadPool(threadFactory);
+
+    public GradleBspServer(ProjectConnection gradleConnection, Path initScriptPath) {
+        this.initScriptPath = initScriptPath;
+        this.gradleConnection = new AtomicReference<>(gradleConnection);
+        this.workspaceModel = new AtomicReference<>(getCustomModel(gradleConnection, BspWorkspace.class));
+    }
+
+    private <T> T getCustomModel(ProjectConnection connection, Class<T> customModelClass) {
+        return connection.model(customModelClass)
+                .addArguments("--init-script", initScriptPath.toString())
+                .get();
+    }
+
+    private <T> CompletableFuture<T> getCustomModelFuture(ProjectConnection connection, Class<T> customModelClass) {
+        var modelBuilder = connection
+                .model(customModelClass)
+                .addArguments("--init-script", initScriptPath.toString());
+
+        return GradleResults.handle(modelBuilder::get);
+    }
+
+    public boolean isInitialized() {
+        return initialized.get();
+    }
+
+    public boolean isShutdown() {
+        return shutdown.get();
     }
 
     public ExecutorService getExecutor() {
@@ -46,27 +94,70 @@ public class GradleBspServer implements BuildServer {
         return exitCode;
     }
 
+    public <A> CompletableFuture<A> ifInitialized(Function<CancelChecker, A> action) {
+        if (isInitialized() && !isShutdown()) {
+            return CompletableFutures.computeAsync(executor, action);
+        } else {
+            var error = isShutdown()
+                    ? new ResponseError(ResponseErrorCode.InvalidRequest, "Server has been shut down", null)
+                    : new ResponseError(ResponseErrorCode.ServerNotInitialized, "Server was not initialized", null);
+            var result = new CompletableFuture<A>();
+            result.completeExceptionally(new ResponseErrorException(error));
+            return result;
+        }
+    }
+
+    public <A> CompletableFuture<A> ifInitializedAsync(Function<CancelChecker, CompletableFuture<A>> action) {
+        return ifInitialized(action).thenCompose(x -> x);
+    }
+
+    public void ifShouldNotify(Runnable action) {
+        if (isInitialized() && !isShutdown()) {
+            action.run();
+        }
+    }
+
     @Override
     public CompletableFuture<InitializeBuildResult> buildInitialize(InitializeBuildParams params) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildInitialize'");
+        return CompletableFutures.computeAsync(executor, cancelToken -> {
+            cancelToken.checkCanceled();
+
+            clientCapabilities.set(params.getCapabilities());
+
+            var serverCapabilities = new BuildServerCapabilities();
+
+            serverCapabilities.setCanReload(true);
+
+            return new InitializeBuildResult(
+                    "Gradle Build Server",
+                    BuildInfo.version,
+                    BuildInfo.bspVersion,
+                    serverCapabilities);
+        });
     }
 
     @Override
     public void onBuildInitialized() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'onBuildInitialized'");
+        initialized.set(true);
     }
 
     @Override
     public CompletableFuture<Object> buildShutdown() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildShutdown'");
+        return ifInitialized(cancelToken -> {
+            cancelToken.checkCanceled();
+            shutdown.set(true);
+            return null;
+        });
     }
 
     @Override
     public void onBuildExit() {
         try {
+            if (!isShutdown()) {
+                logger.error("Server exit request received before shutdown request");
+                exitCode = ExitCode.SOFTWARE;
+            }
+
             executor.shutdown();
 
             if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
@@ -85,8 +176,15 @@ public class GradleBspServer implements BuildServer {
 
     @Override
     public CompletableFuture<Object> workspaceReload() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'workspaceReload'");
+        return CompletableFutures.computeAsync(executor, cancelToken -> {
+            cancelToken.checkCanceled();
+            return getCustomModelFuture(this.gradleConnection.get(), BspWorkspace.class)
+                    .thenApply(workspaceModel -> {
+                        cancelToken.checkCanceled();
+                        this.workspaceModel.set(workspaceModel);
+                        return null;
+                    });
+        }).thenCompose(x -> x);
     }
 
     @Override
@@ -114,6 +212,12 @@ public class GradleBspServer implements BuildServer {
     }
 
     @Override
+    public CompletableFuture<OutputPathsResult> buildTargetOutputPaths(OutputPathsParams params) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'buildTargetOutputPaths'");
+    }
+
+    @Override
     public CompletableFuture<CompileResult> buildTargetCompile(CompileParams params) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'buildTargetCompile'");
@@ -132,15 +236,21 @@ public class GradleBspServer implements BuildServer {
     }
 
     @Override
-    public CompletableFuture<CleanCacheResult> buildTargetCleanCache(CleanCacheParams params) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildTargetCleanCache'");
-    }
-
-    @Override
     public CompletableFuture<DependencyModulesResult> buildTargetDependencyModules(DependencyModulesParams params) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'buildTargetDependencyModules'");
+    }
+
+    @Override
+    public CompletableFuture<DebugSessionAddress> debugSessionStart(DebugSessionParams params) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'debugSessionStart'");
+    }
+
+    @Override
+    public CompletableFuture<CleanCacheResult> buildTargetCleanCache(CleanCacheParams params) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'buildTargetCleanCache'");
     }
 
     @Override

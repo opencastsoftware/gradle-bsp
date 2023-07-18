@@ -4,5 +4,6 @@
 .vscode/
 bin/
 build/
+log/
 .classpath
 .project

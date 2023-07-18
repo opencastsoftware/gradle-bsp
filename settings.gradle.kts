@@ -6,3 +6,10 @@ include("plugin")
 project(":plugin").name = "gradle-bsp-plugin"
 include("server")
 project(":server").name = "gradle-bsp-server"
+
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}

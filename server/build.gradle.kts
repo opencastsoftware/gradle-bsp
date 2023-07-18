@@ -9,20 +9,10 @@ plugins {
 
 group = "com.opencastsoftware.gradle"
 
-buildInfo {
-    packageName.set("com.opencastsoftware.gradle.bsp")
-    properties.set(
-        mapOf("version" to project.version.toString(), "bspVersion" to libs.versions.bsp4j.get())
-    )
-}
-
 repositories {
-    mavenLocal()
     mavenCentral()
     maven { url = uri("https://repo.gradle.org/gradle/libs-releases") }
 }
-
-spotless { java { targetExclude("build/**") } }
 
 java {
     toolchain {
@@ -30,6 +20,13 @@ java {
         // See above
         // vendor.set(JvmVendorSpec.GRAAL_VM)
     }
+}
+
+buildInfo {
+    packageName.set("com.opencastsoftware.gradle.bsp")
+    properties.set(
+        mapOf("version" to project.version.toString(), "bspVersion" to libs.versions.bsp4j.get())
+    )
 }
 
 dependencies {
@@ -42,7 +39,13 @@ dependencies {
     // Command line argument parsing
     implementation(libs.picocli)
     annotationProcessor(libs.picocliCodegen)
+    // Unix Socket Support
+    // We must use a pom type dependency here, because Gradle's platform()
+    // doesn't actually resolve the transitive dependencies so they would
+    // have to be added separately
+    implementation("${libs.junixSocket.get()}@pom") { isTransitive = true }
     // Logging
+    implementation(libs.bundles.slf4j)
     runtimeOnly(libs.logback)
 }
 

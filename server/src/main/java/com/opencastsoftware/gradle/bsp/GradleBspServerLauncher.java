@@ -4,47 +4,57 @@
  */
 package com.opencastsoftware.gradle.bsp;
 
+import ch.epfl.scala.bsp4j.BuildClient;
+import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
+import org.newsclub.net.unix.AFUNIXSocket;
+import org.newsclub.net.unix.AFUNIXSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-@Command(name = "Gradle BSP Server", mixinStandardHelpOptions = true)
+@Command(name = "Gradle BSP Server", version = BuildInfo.version, mixinStandardHelpOptions = true)
 public class GradleBspServerLauncher implements Callable<Integer> {
     private static Logger logger = LoggerFactory.getLogger(GradleBspServerLauncher.class);
-    private static Path initScriptPath;
 
-    public static void main(String[] args) throws IOException {
-        initScriptPath = createInitScript();
-        int exitCode = new CommandLine(new GradleBspServerLauncher()).execute(args);
-        System.exit(exitCode);
+    private final Path initScriptPath;
+
+    @ArgGroup(exclusive = true, multiplicity = "1")
+    private Transport transport;
+
+    private static class Transport {
+        @Option(names = { "--stdio" }, required = true, description = "Use standard input / output streams.")
+        boolean useStdio;
+
+        @Option(names = { "--socket" }, required = true, description = "Use TCP socket on the given port.")
+        int socketPort;
+
+        @Option(names = { "--pipe" }, required = true, description = "Use named pipe at the given location.")
+        String pipeName;
     }
 
-    private Path findProjectRoot() {
-        var currentDir = Paths.get(".")
-                .toAbsolutePath()
-                .normalize();
+    public GradleBspServerLauncher(Path initScriptPath) {
+        this.initScriptPath = initScriptPath;
+    }
 
-        var parentDir = currentDir.getParent();
-
-        while (Files.exists(parentDir.resolve("settings.gradle")) ||
-                Files.exists(parentDir.resolve("settings.gradle.kts"))) {
-            currentDir = parentDir;
-            parentDir = parentDir.getParent();
-        }
-
-        return currentDir;
+    public static void main(String[] args) throws IOException {
+        var launcher = new GradleBspServerLauncher(createInitScript());
+        int exitCode = new CommandLine(launcher).execute(args);
+        System.exit(exitCode);
     }
 
     private static Path createInitScript() throws IOException {
@@ -59,40 +69,63 @@ public class GradleBspServerLauncher implements Callable<Integer> {
         return initScriptPath;
     }
 
-    private <T> T getCustomModel(ProjectConnection connection, Class<T> customModelClass) {
-        return connection.model(customModelClass)
-            .addArguments("--init-script", initScriptPath.toString())
-            .get();
+
+    private File findProjectRoot() {
+        var currentDir = Paths.get(".")
+                .toAbsolutePath()
+                .normalize();
+
+        var parentDir = currentDir.getParent();
+
+        while (Files.exists(parentDir.resolve("settings.gradle")) ||
+                Files.exists(parentDir.resolve("settings.gradle.kts"))) {
+            currentDir = parentDir;
+            parentDir = parentDir.getParent();
+        }
+
+        return currentDir.toFile();
+    }
+
+    private int listenOn(InputStream in, OutputStream out) throws InterruptedException, ExecutionException {
+        var connector = GradleConnector.newConnector()
+                .forProjectDirectory(findProjectRoot())
+                .useBuildDistribution();
+
+        try (ProjectConnection connection = connector.connect()) {
+            var server = new GradleBspServer(connection, initScriptPath);
+            var errWriter = new PrintWriter(System.err);
+            var launcher = Launcher.createLauncher(server, BuildClient.class, in, out, true, errWriter);
+            server.onConnectWithClient(launcher.getRemoteProxy());
+            launcher.startListening().get();
+            var exitCode = server.getExitCode();
+            logger.info("Server exiting with exit code {}", exitCode);
+            return exitCode;
+        }
     }
 
     @Override
     public Integer call() throws Exception {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+
         Thread.setDefaultUncaughtExceptionHandler((t, ex) -> {
             logger.error("Uncaught exception in thread {}", t.getName(), ex);
         });
 
-        var connector = GradleConnector.newConnector()
-                .forProjectDirectory(findProjectRoot().toFile());
-
-        try (ProjectConnection connection = connector.connect()) {
-            var workspaceModel = getCustomModel(connection, BspWorkspace.class);
-
-            System.err.println(workspaceModel);
-
-            // var server = new GradleBspServer(null);
-
-            // var launcher = new Launcher.Builder<BuildClient>()
-            // .setInput(System.in)
-            // .setOutput(System.out)
-            // .setLocalService(server)
-            // .setRemoteInterface(BuildClient.class)
-            // .create();
-
-            // server.onConnectWithClient(launcher.getRemoteProxy());
-            // launcher.startListening().get();
-            // var exitCode = server.getExitCode();
-            // return exitCode;
-            return 0;
+        if (transport.useStdio) {
+            logger.debug("Using standard input/output streams");
+            return listenOn(System.in, System.out);
+        } else if (transport.pipeName != null) {
+            logger.debug("Using pipe {}", transport.pipeName);
+            var sockAddress = AFUNIXSocketAddress.of(new File(transport.pipeName));
+            try (Socket socket = AFUNIXSocket.connectTo(sockAddress)) {
+                return listenOn(socket.getInputStream(), socket.getOutputStream());
+            }
+        } else {
+            logger.debug("Using local socket {}", transport.socketPort);
+            try (Socket socket = new Socket("127.0.0.1", transport.socketPort)) {
+                return listenOn(socket.getInputStream(), socket.getOutputStream());
+            }
         }
     }
 }

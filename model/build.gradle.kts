@@ -1,9 +1,13 @@
 plugins {
     java
     alias(libs.plugins.gradleJavaConventions)
+    // TODO: remove this once https://github.com/gradle/gradle/issues/17559 is fixed
+    alias(libs.plugins.gradleBuildInfo)
 }
 
 group = "com.opencastsoftware.gradle"
+
+description = "Custom Gradle models for the Build Server Protocol"
 
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(11)) } }
 
