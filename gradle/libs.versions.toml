@@ -7,7 +7,7 @@ gradleToolingApi = "8.2.1"
 jacoco = "0.8.8"
 junit = "5.9.3"
 logback = "1.4.8"
-picocli = "4.7.1"
+picocli = "4.7.4"
 
 [libraries]
 bsp4j = { module = "ch.epfl.scala:bsp4j", version.ref = "bsp4j" }
