@@ -75,7 +75,7 @@ public class GradleBspPlugin implements Plugin<Project> {
                 .dir(".bsp")
                 .file("gradle.json");
 
-        project.getTasks().register("generateBspConfig", GenerateBspConfig.class, task -> {
+        project.getTasks().register("bspConfig", GenerateBspConfig.class, task -> {
             task.getTaskClasspath().from(bspConfig);
             task.getBuildServerClasspath().from(bspServer);
             task.getLanguages().convention(languages);

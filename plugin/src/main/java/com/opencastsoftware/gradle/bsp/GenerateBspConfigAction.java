@@ -46,7 +46,7 @@ public abstract class GenerateBspConfigAction implements WorkAction<GenerateBspC
         argv.put("--stdio");
 
         JSONObject bspConfig = new JSONObject();
-        bspConfig.put("name", "gradle");
+        bspConfig.put("name", "Gradle");
         bspConfig.put("version", GradleVersion.current().getVersion());
         bspConfig.put("bspVersion", BuildInfo.bspVersion);
         bspConfig.put("languages", languages);
