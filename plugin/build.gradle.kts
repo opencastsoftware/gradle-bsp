@@ -12,10 +12,13 @@ description =
 
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(11)) } }
 
+val pluginId = "com.opencastsoftware.gradle.bsp"
+
 buildInfo {
     packageName.set("com.opencastsoftware.gradle.bsp")
     properties.set(
         mapOf(
+            "pluginId" to pluginId,
             "version" to project.version.toString(),
             "bspVersion" to libs.versions.bsp4j.get(),
             "jsonJavaVersion" to libs.versions.jsonJava.get()
@@ -31,7 +34,7 @@ dependencies {
 
 gradlePlugin {
     plugins.create("gradleBsp") {
-        id = "com.opencastsoftware.gradle.bsp"
+        id = pluginId
         displayName = "Gradle Build Server Protocol Plugin"
         implementationClass = "com.opencastsoftware.gradle.bsp.GradleBspPlugin"
     }

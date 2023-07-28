@@ -28,11 +28,14 @@ public class GradleBspPlugin implements Plugin<Project> {
     }
 
     public void apply(Project project) {
-        builderRegistry.register(new BspWorkspaceModelBuilder());
-        Configuration bspConfig = createBspConfigConfiguration(project);
-        Configuration bspServer = createBspServerConfiguration(project);
-        List<String> languages = getLanguages(project);
-        registerBspConfigTask(project, languages, bspConfig, bspServer);
+        // Only apply the plugin once
+        if (!project.getPlugins().hasPlugin(BuildInfo.pluginId)) {
+            builderRegistry.register(new BspWorkspaceModelBuilder());
+            Configuration bspConfig = createBspConfigConfiguration(project);
+            Configuration bspServer = createBspServerConfiguration(project);
+            List<String> languages = getLanguages(project);
+            registerBspConfigTask(project, languages, bspConfig, bspServer);
+        }
     }
 
     private Configuration createBspConfigConfiguration(Project project) {
