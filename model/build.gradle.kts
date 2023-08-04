@@ -11,6 +11,13 @@ description = "Custom Gradle models for the Build Server Protocol"
 
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(11)) } }
 
+dependencies {
+    testImplementation(libs.junitJupiter)
+    testImplementation(libs.hamcrest)
+    testImplementation(libs.equalsVerifier)
+    testImplementation(libs.toStringVerifier)
+}
+
 mavenPublishing {
     coordinates("com.opencastsoftware.gradle", "gradle-bsp-model", project.version.toString())
 

@@ -5,8 +5,8 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
-import java.util.List;
+import java.net.URI;
 
-public interface BspWorkspace extends Serializable {
-    List<BspBuildTarget> buildTargets();
+public interface BspBuildTargetId extends Serializable {
+    URI uri();
 }

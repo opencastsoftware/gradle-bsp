@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class GradleBspServer implements BuildServer {
     private static final Logger logger = LoggerFactory.getLogger(GradleBspServer.class);
@@ -62,7 +63,8 @@ public class GradleBspServer implements BuildServer {
     }
 
     private <T> T getCustomModel(ProjectConnection connection, Class<T> customModelClass) {
-        return connection.model(customModelClass)
+        return connection
+                .model(customModelClass)
                 .addArguments("--init-script", initScriptPath.toString())
                 .get();
     }
@@ -145,10 +147,13 @@ public class GradleBspServer implements BuildServer {
     @Override
     public CompletableFuture<Object> buildShutdown() {
         return ifInitialized(cancelToken -> {
-            cancelToken.checkCanceled();
+            performShutdown();
             shutdown.set(true);
             return null;
         });
+    }
+
+    void performShutdown() {
     }
 
     @Override
@@ -156,6 +161,7 @@ public class GradleBspServer implements BuildServer {
         try {
             if (!isShutdown()) {
                 logger.error("Server exit request received before shutdown request");
+                performShutdown();
                 exitCode = ExitCode.SOFTWARE;
             }
 
@@ -171,13 +177,19 @@ public class GradleBspServer implements BuildServer {
 
     @Override
     public CompletableFuture<WorkspaceBuildTargetsResult> workspaceBuildTargets() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'workspaceBuildTargets'");
+        return ifInitialized(cancelToken -> {
+            cancelToken.checkCanceled();
+            var buildTargets = workspaceModel.get()
+                    .buildTargets().stream()
+                    .map(Conversions::toBspBuildTarget)
+                    .collect(Collectors.toList());
+            return new WorkspaceBuildTargetsResult(buildTargets);
+        });
     }
 
     @Override
     public CompletableFuture<Object> workspaceReload() {
-        return CompletableFutures.computeAsync(executor, cancelToken -> {
+        return ifInitializedAsync(cancelToken -> {
             cancelToken.checkCanceled();
             return getCustomModelFuture(this.gradleConnection.get(), BspWorkspace.class)
                     .thenApply(workspaceModel -> {
@@ -185,7 +197,7 @@ public class GradleBspServer implements BuildServer {
                         this.workspaceModel.set(workspaceModel);
                         return null;
                     });
-        }).thenCompose(x -> x);
+        });
     }
 
     @Override

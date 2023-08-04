@@ -1,9 +1,11 @@
 [versions]
 bsp4j = "2.1.0-M5"
+equalsVerifier = "3.15"
 graalVmNativeImagePlugin = "0.9.23"
 gradleBuildInfo = "0.3.1"
 gradleJavaConventions = "0.1.4"
 gradleToolingApi = "8.2.1"
+hamcrest = "2.2"
 jacoco = "0.8.8"
 jsonJava = "20230618"
 junit = "5.10.0"
@@ -11,10 +13,13 @@ junixSocket = "2.6.2"
 logback = "1.4.8"
 picocli = "4.7.4"
 slf4j = "2.0.7"
+toStringVerifier = "1.4.8"
 
 [libraries]
 bsp4j = { module = "ch.epfl.scala:bsp4j", version.ref = "bsp4j" }
+equalsVerifier = { module = "nl.jqno.equalsverifier:equalsverifier", version.ref = "equalsVerifier" }
 gradleToolingApi = { module = "org.gradle:gradle-tooling-api", version.ref = "gradleToolingApi" }
+hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 jsonJava = { module = "org.json:json", version.ref = "jsonJava" }
 julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 junitJupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
@@ -23,6 +28,7 @@ logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
 picocliCodegen = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
 slf4jApi = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+toStringVerifier = { module = "com.jparams:to-string-verifier", version.ref = "toStringVerifier" }
 
 [bundles]
 slf4j = ["slf4jApi", "julToSlf4j"]

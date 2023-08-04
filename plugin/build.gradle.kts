@@ -29,7 +29,6 @@ buildInfo {
 dependencies {
     api(project(":gradle-bsp-model"))
     compileOnly(libs.jsonJava)
-    testImplementation(libs.junitJupiter)
 }
 
 gradlePlugin {
@@ -49,6 +48,15 @@ testing {
                 dependencies {
                     implementation(project())
                     implementation(libs.junitJupiter)
+                    implementation(libs.hamcrest)
+                    implementation(libs.jsonJava)
+                }
+
+                targets.all {
+                    testTask.configure {
+                        dependsOn(":gradle-bsp-model:publishToMavenLocal")
+                        dependsOn(":gradle-bsp-server:publishToMavenLocal")
+                    }
                 }
             }
         }

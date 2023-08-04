@@ -51,11 +51,10 @@ public abstract class GenerateBspConfigAction implements WorkAction<GenerateBspC
         bspConfig.put("bspVersion", BuildInfo.bspVersion);
         bspConfig.put("languages", languages);
         bspConfig.put("argv", argv);
-        bspConfig.toString(2);
 
         try {
             Files.createDirectories(outputFile.getParent());
-            Files.writeString(outputFile, bspConfig.toString(2));
+            Files.writeString(outputFile, bspConfig.toString());
         } catch (IOException e) {
             UncheckedException.throwAsUncheckedException(e);
         }

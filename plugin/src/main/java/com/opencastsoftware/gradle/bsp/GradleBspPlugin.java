@@ -4,13 +4,13 @@
  */
 package com.opencastsoftware.gradle.bsp;
 
-import com.opencastsoftware.gradle.bsp.model.BspWorkspace;
-import com.opencastsoftware.gradle.bsp.model.DefaultBspWorkspace;
+import com.opencastsoftware.gradle.bsp.model.*;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.RegularFile;
-import org.gradle.tooling.provider.model.ToolingModelBuilder;
+import org.gradle.api.plugins.*;
+import org.gradle.api.tasks.*;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import javax.inject.Inject;
@@ -30,7 +30,7 @@ public class GradleBspPlugin implements Plugin<Project> {
     public void apply(Project project) {
         // Only apply the plugin once
         if (!project.getPlugins().hasPlugin(BuildInfo.pluginId)) {
-            builderRegistry.register(new BspWorkspaceModelBuilder());
+            builderRegistry.register(new BspModelBuilder());
             Configuration bspConfig = createBspConfigConfiguration(project);
             Configuration bspServer = createBspServerConfiguration(project);
             List<String> languages = getLanguages(project);
@@ -86,16 +86,4 @@ public class GradleBspPlugin implements Plugin<Project> {
         });
     }
 
-    private static class BspWorkspaceModelBuilder implements ToolingModelBuilder {
-
-        @Override
-        public boolean canBuild(String modelName) {
-            return modelName.equals(BspWorkspace.class.getName());
-        }
-
-        @Override
-        public BspWorkspace buildAll(String modelName, Project project) {
-            return new DefaultBspWorkspace();
-        }
-    }
 }

@@ -5,8 +5,10 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
-import java.util.List;
 
-public interface BspWorkspace extends Serializable {
-    List<BspBuildTarget> buildTargets();
+public interface BspBuildTargetCapabilities extends Serializable {
+    boolean canCompile();
+    boolean canTest();
+    boolean canRun();
+    boolean canDebug();
 }

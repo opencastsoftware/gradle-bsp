@@ -93,12 +93,25 @@ public class GradleBspServerLauncher implements Callable<Integer> {
 
         try (ProjectConnection connection = connector.connect()) {
             var server = new GradleBspServer(connection, initScriptPath);
-            var errWriter = new PrintWriter(System.err);
-            var launcher = Launcher.createLauncher(server, BuildClient.class, in, out, true, errWriter);
+
+            var launcher = new Launcher.Builder<BuildClient>()
+                    .setLocalService(server)
+                    .setRemoteInterface(BuildClient.class)
+                    .setInput(in)
+                    .setOutput(out)
+                    .setExecutorService(server.getExecutor())
+                    .traceMessages(new PrintWriter(System.err))
+                    .validateMessages(true)
+                    .create();
+
             server.onConnectWithClient(launcher.getRemoteProxy());
+
             launcher.startListening().get();
+
             var exitCode = server.getExitCode();
+
             logger.info("Server exiting with exit code {}", exitCode);
+
             return exitCode;
         }
     }
