@@ -9,4 +9,4 @@ initscript {
     }
 }
 
-allprojects { apply<com.opencastsoftware.gradle.bsp.GradleBspPlugin>() }
+allprojects { apply<com.opencastsoftware.gradle.bsp.BspPlugin>() }

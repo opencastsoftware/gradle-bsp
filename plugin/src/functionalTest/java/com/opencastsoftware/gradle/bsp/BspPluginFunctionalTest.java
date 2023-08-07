@@ -20,10 +20,9 @@ import java.io.Writer;
 import java.nio.file.Files;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
-class GradleBspPluginFunctionalTest {
+class BspPluginFunctionalTest {
 
     private File getBuildFile(File projectDir) {
         return new File(projectDir, "build.gradle");
@@ -68,6 +67,39 @@ class GradleBspPluginFunctionalTest {
         assertThat(jsonObj.get("version"), is(GradleVersion.current().getVersion()));
         assertThat(jsonObj.get("bspVersion"), is(BuildInfo.bspVersion));
         assertThat(jsonObj.get("argv"), is(instanceOf(JSONArray.class)));
+        assertThat(((JSONArray) jsonObj.get("languages")).toList(), contains("java", "groovy", "scala", "antlr"));
+    }
+
+    @Test
+    void generatesAdditionalSupportedLanguages(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}\n" +
+                        "repositories {\n" +
+                        "  mavenLocal()\n" +
+                        "  mavenCentral()\n" +
+                        "  maven { url 'https://repo.gradle.org/gradle/libs-releases' }\n"+
+                        "}\n" +
+                        "bsp {\n" +
+                        "  supportedLanguages.add(\"kotlin\")\n" +
+                        "}");
+
+        var result = runBspConfigTask(projectDir);
+        var bspConfigTask = result.task(":bspConfig");
+        var bspFolder = projectDir.toPath().resolve(".bsp");
+        var gradleJson = bspFolder.resolve("gradle.json");
+
+        assertThat(bspConfigTask.getOutcome(), is(TaskOutcome.SUCCESS));
+
+        var jsonObj = new JSONObject(Files.readString(gradleJson));
+        assertThat(jsonObj.get("name"), is("Gradle"));
+        assertThat(jsonObj.get("languages"), is(instanceOf(JSONArray.class)));
+        assertThat(jsonObj.get("version"), is(GradleVersion.current().getVersion()));
+        assertThat(jsonObj.get("bspVersion"), is(BuildInfo.bspVersion));
+        assertThat(jsonObj.get("argv"), is(instanceOf(JSONArray.class)));
+        assertThat(((JSONArray) jsonObj.get("languages")).toList(), contains("java", "groovy", "scala", "antlr", "kotlin"));
     }
 
     private void writeString(File file, String string) throws IOException {

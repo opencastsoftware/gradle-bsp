@@ -4,33 +4,40 @@
  */
 package com.opencastsoftware.gradle.bsp;
 
-import com.opencastsoftware.gradle.bsp.model.*;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.RegularFile;
-import org.gradle.api.plugins.*;
-import org.gradle.api.tasks.*;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GradleBspPlugin implements Plugin<Project> {
+public class BspPlugin implements Plugin<Project> {
+    private final ObjectFactory objectFactory;
     private final ToolingModelBuilderRegistry builderRegistry;
     private static final String JSON_JAVA_MAVEN_COORD = "org.json:json:" + BuildInfo.jsonJavaVersion;
     private static final String BSP_SERVER_MAVEN_COORD = "com.opencastsoftware.gradle:gradle-bsp-server:" + BuildInfo.version;
+    private static final List<String> DEFAULT_SUPPORTED_LANGUAGES = List.of("java", "groovy", "scala", "antlr");
 
     @Inject
-    public GradleBspPlugin(ToolingModelBuilderRegistry builderRegistry) {
+    public BspPlugin(ObjectFactory objectFactory, ToolingModelBuilderRegistry builderRegistry) {
+        this.objectFactory = objectFactory;
         this.builderRegistry = builderRegistry;
     }
 
     public void apply(Project project) {
         // Only apply the plugin once
         if (!project.getPlugins().hasPlugin(BuildInfo.pluginId)) {
-            builderRegistry.register(new BspModelBuilder());
+            var bspExtension = project.getExtensions().create("bsp", DefaultBspExtension.class, objectFactory);
+            bspExtension.getSupportedLanguages().addAll(DEFAULT_SUPPORTED_LANGUAGES);
+            bspExtension.getLanguageModelBuilders().add(objectFactory.newInstance(BspJavaLanguageModelBuilder.class));
+            bspExtension.getLanguageModelBuilders().add(objectFactory.newInstance(BspGroovyLanguageModelBuilder.class));
+            bspExtension.getLanguageModelBuilders().add(objectFactory.newInstance(BspScalaLanguageModelBuilder.class));
+            bspExtension.getLanguageModelBuilders().add(objectFactory.newInstance(BspAntlrLanguageModelBuilder.class));
+            builderRegistry.register(new BspToolingModelBuilder());
             Configuration bspConfig = createBspConfigConfiguration(project);
             Configuration bspServer = createBspServerConfiguration(project);
             List<String> languages = getLanguages(project);
@@ -72,6 +79,8 @@ public class GradleBspPlugin implements Plugin<Project> {
     }
 
     private void registerBspConfigTask(Project project, List<String> languages, Configuration bspConfig, Configuration bspServer) {
+        BspExtension bspExtension = project.getExtensions().getByType(BspExtension.class);
+
         RegularFile outputFile = project.getRootProject()
                 .getLayout()
                 .getProjectDirectory()
@@ -81,7 +90,7 @@ public class GradleBspPlugin implements Plugin<Project> {
         project.getTasks().register("bspConfig", GenerateBspConfig.class, task -> {
             task.getTaskClasspath().from(bspConfig);
             task.getBuildServerClasspath().from(bspServer);
-            task.getLanguages().convention(languages);
+            task.getLanguages().set(bspExtension.getSupportedLanguages());
             task.getOutputFile().convention(outputFile);
         });
     }

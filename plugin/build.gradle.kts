@@ -35,7 +35,7 @@ gradlePlugin {
     plugins.create("gradleBsp") {
         id = pluginId
         displayName = "Gradle Build Server Protocol Plugin"
-        implementationClass = "com.opencastsoftware.gradle.bsp.GradleBspPlugin"
+        implementationClass = "com.opencastsoftware.gradle.bsp.BspPlugin"
     }
 }
 

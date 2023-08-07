@@ -7,7 +7,7 @@ package com.opencastsoftware.gradle.bsp;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.*;
 import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
@@ -24,7 +24,7 @@ public abstract class GenerateBspConfig extends DefaultTask {
     public abstract ConfigurableFileCollection getBuildServerClasspath();
 
     @Input
-    public abstract ListProperty<String> getLanguages();
+    public abstract SetProperty<String> getLanguages();
 
     @OutputFile
     public abstract RegularFileProperty getOutputFile();

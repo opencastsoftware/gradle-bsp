@@ -9,56 +9,100 @@ import org.gradle.api.Project;
 import org.gradle.api.attributes.TestSuiteType;
 import org.gradle.api.plugins.ApplicationPlugin;
 import org.gradle.api.plugins.JavaLibraryPlugin;
-import org.gradle.api.plugins.JavaPluginExtension;
-import org.gradle.api.plugins.antlr.AntlrSourceDirectorySet;
 import org.gradle.api.plugins.jvm.JvmTestSuite;
-import org.gradle.api.tasks.GroovySourceDirectorySet;
-import org.gradle.api.tasks.ScalaRuntime;
-import org.gradle.api.tasks.ScalaSourceDirectorySet;
 import org.gradle.api.tasks.SourceSet;
-import org.gradle.api.tasks.scala.ScalaCompile;
 import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.testing.base.TestingExtension;
-import org.gradle.tooling.provider.model.ToolingModelBuilder;
-import org.gradle.util.Path;
-import org.gradle.util.internal.VersionNumber;
 
-import java.net.URI;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-public class BspModelBuilder implements ToolingModelBuilder {
-    @Override
-    public boolean canBuild(String modelName) {
-        return modelName.equals(BspWorkspace.class.getName());
+public interface BspModelBuilder {
+    String APPLICATION_TAG = "application";
+    String LIBRARY_TAG = "library";
+    String TEST_TAG = "test";
+    String INTEGRATION_TEST_TAG = "integration-test";
+
+    default BspBuildTargetId getBuildTargetIdFor(Project project) {
+        return new DefaultBspBuildTargetId(project.getProjectDir().toURI());
     }
 
-    List<String> buildTargetTags(Project project, boolean isApplication, boolean isLibrary, boolean isTest, boolean isIntegrationTest) {
+    default BspBuildTargetId getBuildTargetIdFor(Project project, SourceSet sourceSet) {
+        var sourceSetName = sourceSet.getTaskName(null, null);
+        var buildTargetUri = project.getProjectDir().toURI().resolve("?sourceSet=" + sourceSetName);
+        return new DefaultBspBuildTargetId(buildTargetUri);
+    }
+
+    default String getBaseDirectoryFor(Project project) {
+        return project.getProjectDir().toURI().toString();
+    }
+
+    default List<String> getBuildTargetTagsFor(Project project) {
         var tags = new ArrayList<String>();
 
+        var isApplication = project.getPlugins().hasPlugin(ApplicationPlugin.class);
         if (isApplication) {
-            tags.add("application");
+            tags.add(APPLICATION_TAG);
         }
 
+        var isLibrary = project.getPlugins().hasPlugin(JavaLibraryPlugin.class);
         if (isLibrary) {
-            tags.add("library");
-        }
-
-        if (isTest) {
-            tags.add("test");
-        }
-
-        if (isIntegrationTest) {
-            tags.add("integration-test");
+            tags.add(LIBRARY_TAG);
         }
 
         return tags;
     }
 
-    BspJvmBuildTarget buildJvmBuildTarget(Project project) {
+    default List<String> getBuildTargetTagsFor(Project project, SourceSet sourceSet) {
+        var tags = new ArrayList<String>();
+
+        var isApplication = SourceSet.isMain(sourceSet) && project.getPlugins().hasPlugin(ApplicationPlugin.class);
+        if (isApplication) {
+            tags.add(APPLICATION_TAG);
+        }
+
+        var isLibrary = SourceSet.isMain(sourceSet) && project.getPlugins().hasPlugin(JavaLibraryPlugin.class);
+        if (isLibrary) {
+            tags.add(LIBRARY_TAG);
+        }
+
+        var testSourceSets = getTestSourceSets(project);
+        var integrationTestSourceSets = getTestSourceSetsWithType(project, TestSuiteType.INTEGRATION_TEST);
+
+        var isTest = testSourceSets.contains(sourceSet);
+        if (isTest) {
+            tags.add(TEST_TAG);
+        }
+
+        var isIntegrationTest = integrationTestSourceSets.contains(sourceSet);
+        if (isIntegrationTest) {
+            tags.add(INTEGRATION_TEST_TAG);
+        }
+
+        return tags;
+    }
+
+    default BspBuildTargetCapabilities getBuildTargetCapabilitiesFor(Project project) {
+        var isApplication =  project.getPlugins().hasPlugin(ApplicationPlugin.class);
+        return new DefaultBspBuildTargetCapabilities(true, true, isApplication, false);
+    }
+
+    default BspBuildTargetCapabilities getBuildTargetCapabilitiesFor(Project project, SourceSet sourceSet) {
+        var isApplication = SourceSet.isMain(sourceSet) && project.getPlugins().hasPlugin(ApplicationPlugin.class);
+        var isTest = getTestSourceSets(project).contains(sourceSet);
+        return new DefaultBspBuildTargetCapabilities(true, isTest, isApplication, false);
+    }
+
+    default @Nullable BspJvmBuildTarget getJvmBuildTargetFor(Project project) {
         var javaToolChainService = project.getExtensions().findByType(JavaToolchainService.class);
+
+        if (javaToolChainService == null) {
+            return null;
+        }
 
         var javaToolchain = javaToolChainService.launcherFor(spec -> {
         }).get();
@@ -71,170 +115,26 @@ public class BspModelBuilder implements ToolingModelBuilder {
         );
     }
 
-    BspBuildTarget buildJavaBuildTarget(Project project, URI projectURI, BspJvmBuildTarget jvmBuildTarget, List<String> tags, SourceSet sourceSet, boolean isTest, boolean isApplication, boolean isLibrary) {
-        var displayName = project.getPath().equals(":")
-                ? project.getPath() + sourceSet.getName()
-                : project.getPath() + Path.SEPARATOR + sourceSet.getName();
-
-        return new DefaultBspBuildTarget(
-                new DefaultBspBuildTargetId(projectURI.resolve(sourceSet.getName())),
-                displayName,
-                project.getProjectDir().getAbsoluteFile().toURI().toString(),
-                tags,
-                List.of("java"),
-                List.of(),
-                new DefaultBspBuildTargetCapabilities(true, isTest, isApplication, false),
-                "jvm",
-                jvmBuildTarget
-        );
-    }
-
-    BspBuildTarget buildScalaBuildTarget(Project project, URI projectURI, BspJvmBuildTarget jvmBuildTarget, List<String> tags, SourceSet sourceSet, ScalaSourceDirectorySet scalaSourceDirectorySet, boolean isTest, boolean isApplication, boolean isLibrary) {
-        var scalaRuntime = project.getExtensions().findByType(ScalaRuntime.class);
-
-        // Get the classpath of the compile task
-        var scalaCompileTaskName = sourceSet.getCompileTaskName("scala");
-        var scalaCompileTask = project.getTasks().named(scalaCompileTaskName, ScalaCompile.class).get();
-        var scalaCompileClasspath = scalaCompileTask.getClasspath();
-
-        // Use this to find the Scala library JARs
-        var scalaLibraryJar = scalaRuntime.findScalaJar(scalaCompileClasspath, "library");
-        var scala3LibraryJar = scalaRuntime.findScalaJar(scalaCompileClasspath, "library_3");
-
-        boolean isScala3 = scala3LibraryJar != null;
-
-        // This is apparently the legitimate way to find the Scala version used in a Gradle project!
-        var scalaVersion = scalaRuntime.getScalaVersion(isScala3 ? scala3LibraryJar : scalaLibraryJar);
-
-        // Parse out the binary version
-        var scalaVersionNumber = VersionNumber.parse(scalaVersion);
-        var scalaBinaryVersion = String.format("%d.%d", scalaVersionNumber.getMajor(), scalaVersionNumber.getMinor());
-
-        var scalaBuildTarget = new DefaultBspScalaBuildTarget(
-                "org.scala-lang",
-                scalaVersion,
-                scalaBinaryVersion,
-                BspScalaPlatform.JVM,
-                new URI[]{},
-                jvmBuildTarget
-        );
-
-        var displayName = project.getPath().equals(":")
-                ? project.getPath() + scalaSourceDirectorySet.getName()
-                : project.getPath() + Path.SEPARATOR + scalaSourceDirectorySet.getName();
-
-        return new DefaultBspBuildTarget(
-                new DefaultBspBuildTargetId(projectURI.resolve(scalaSourceDirectorySet.getName())),
-                displayName,
-                project.getProjectDir().getAbsoluteFile().toURI().toString(),
-                tags,
-                List.of("scala"),
-                List.of(),
-                new DefaultBspBuildTargetCapabilities(true, isTest, isApplication, false),
-                "scala",
-                scalaBuildTarget
-        );
-    }
-
-    BspBuildTarget buildGroovyBuildTarget(Project project, URI projectURI, BspJvmBuildTarget jvmBuildTarget, List<String> tags, GroovySourceDirectorySet groovySourceDirectorySet, boolean isTest, boolean isApplication, boolean isLibrary) {
-        var displayName = project.getPath().equals(":")
-                ? project.getPath() + groovySourceDirectorySet.getName()
-                : project.getPath() + Path.SEPARATOR + groovySourceDirectorySet.getName();
-
-        return new DefaultBspBuildTarget(
-                new DefaultBspBuildTargetId(projectURI.resolve(groovySourceDirectorySet.getName())),
-                displayName,
-                project.getProjectDir().getAbsoluteFile().toURI().toString(),
-                tags,
-                List.of("groovy"),
-                List.of(),
-                new DefaultBspBuildTargetCapabilities(true, isTest, isApplication, false),
-                "jvm",
-                jvmBuildTarget
-        );
-    }
-
-    BspBuildTarget buildAntlrBuildTarget(Project project, URI projectURI, AntlrSourceDirectorySet antlrSourceDirectorySet) {
-        var displayName = project.getPath().equals(":")
-                ? project.getPath() + antlrSourceDirectorySet.getName()
-                : project.getPath() + Path.SEPARATOR + antlrSourceDirectorySet.getName();
-
-        return new DefaultBspBuildTarget(
-                new DefaultBspBuildTargetId(projectURI.resolve(antlrSourceDirectorySet.getName())),
-                displayName,
-                project.getProjectDir().getAbsoluteFile().toURI().toString(),
-                List.of(),
-                List.of("antlr"),
-                List.of(),
-                new DefaultBspBuildTargetCapabilities(true, false, false, false)
-        );
-    }
-
-    List<SourceSet> getTestSourceSets(Project project) {
+    default Set<SourceSet> getTestSourceSets(Project project) {
         var testingExtension = project.getExtensions().findByType(TestingExtension.class);
 
         return Optional.ofNullable(testingExtension)
-                .map(testExt -> testExt.getSuites()
+                .map(ext -> ext.getSuites()
                         .withType(JvmTestSuite.class).stream()
                         .map(JvmTestSuite::getSources)
-                        .collect(Collectors.toList()))
-                .orElse(List.of());
+                        .collect(Collectors.toSet()))
+                .orElse(Set.of());
     }
 
-    List<SourceSet> getIntegrationTestSourceSets(Project project) {
+    default Set<SourceSet> getTestSourceSetsWithType(Project project, String testSuiteType) {
         var testingExtension = project.getExtensions().findByType(TestingExtension.class);
 
         return Optional.ofNullable(testingExtension)
-                .map(testExt -> testExt.getSuites()
+                .map(ext -> ext.getSuites()
                         .withType(JvmTestSuite.class).stream()
-                        .filter(suite -> suite.getTestType().get().equals(TestSuiteType.INTEGRATION_TEST))
+                        .filter(suite -> suite.getTestType().get().equals(testSuiteType))
                         .map(JvmTestSuite::getSources)
-                        .collect(Collectors.toList()))
-                .orElse(List.of());
-    }
-
-    @Override
-    public BspWorkspace buildAll(String modelName, Project rootProject) {
-        var buildTargets = new ArrayList<BspBuildTarget>();
-
-        rootProject.getAllprojects().forEach(project -> {
-            var projectURI = project.getProjectDir().getAbsoluteFile().toURI();
-            var testSourceSets = getTestSourceSets(project);
-            var integrationTestSourceSets = getIntegrationTestSourceSets(project);
-
-            var javaExtension = project.getExtensions().findByType(JavaPluginExtension.class);
-            if (javaExtension != null) {
-                var jvmBuildTarget = buildJvmBuildTarget(project);
-
-                javaExtension.getSourceSets().forEach(sourceSet -> {
-                    var isApplication = SourceSet.isMain(sourceSet) && project.getPlugins().hasPlugin(ApplicationPlugin.class);
-                    var isLibrary = SourceSet.isMain(sourceSet) && project.getPlugins().hasPlugin(JavaLibraryPlugin.class);
-                    var isTest = testSourceSets.contains(sourceSet);
-                    var isIntegrationTest = integrationTestSourceSets.contains(sourceSet);
-                    var tags = buildTargetTags(project, isApplication, isLibrary, isTest, isIntegrationTest);
-
-                    buildTargets.add(buildJavaBuildTarget(project, projectURI, jvmBuildTarget, tags, sourceSet, isTest, isApplication, isLibrary));
-
-                    var sourceSetExtensions = sourceSet.getExtensions();
-
-                    var scalaSourceDirectorySet = sourceSetExtensions.findByType(ScalaSourceDirectorySet.class);
-                    if (scalaSourceDirectorySet != null) {
-                        buildTargets.add(buildScalaBuildTarget(project, projectURI, jvmBuildTarget, tags, sourceSet, scalaSourceDirectorySet, isTest, isApplication, isLibrary));
-                    }
-
-                    var groovySourceDirectorySet = sourceSetExtensions.findByType(GroovySourceDirectorySet.class);
-                    if (groovySourceDirectorySet != null) {
-                        buildTargets.add(buildGroovyBuildTarget(project, projectURI, jvmBuildTarget, tags, groovySourceDirectorySet, isTest, isApplication, isLibrary));
-                    }
-
-                    var antlrSourceDirectorySet = sourceSetExtensions.findByType(AntlrSourceDirectorySet.class);
-                    if (antlrSourceDirectorySet != null) {
-                        buildTargets.add(buildAntlrBuildTarget(project, projectURI, antlrSourceDirectorySet));
-                    }
-                });
-            }
-        });
-
-        return new DefaultBspWorkspace(buildTargets);
+                        .collect(Collectors.toSet()))
+                .orElse(Set.of());
     }
 }

@@ -6,7 +6,7 @@ package com.opencastsoftware.gradle.bsp;
 
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
@@ -20,7 +20,7 @@ public interface GenerateBspConfigParameters extends WorkParameters {
     ConfigurableFileCollection getBuildServerClasspath();
 
     @Input
-    ListProperty<String> getLanguages();
+    SetProperty<String> getLanguages();
 
     @OutputFile
     RegularFileProperty getOutputFile();
