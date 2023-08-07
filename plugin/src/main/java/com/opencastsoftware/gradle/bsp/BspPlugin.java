@@ -12,7 +12,6 @@ import org.gradle.api.model.ObjectFactory;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 
 public class BspPlugin implements Plugin<Project> {
@@ -40,8 +39,7 @@ public class BspPlugin implements Plugin<Project> {
             builderRegistry.register(new BspToolingModelBuilder());
             Configuration bspConfig = createBspConfigConfiguration(project);
             Configuration bspServer = createBspServerConfiguration(project);
-            List<String> languages = getLanguages(project);
-            registerBspConfigTask(project, languages, bspConfig, bspServer);
+            registerBspConfigTask(project, bspExtension, bspConfig, bspServer);
         }
     }
 
@@ -69,18 +67,7 @@ public class BspPlugin implements Plugin<Project> {
         });
     }
 
-    private List<String> getLanguages(Project project) {
-        List<String> languages = new ArrayList<>();
-        languages.add("java");
-        languages.add("groovy");
-        languages.add("scala");
-        languages.add("antlr");
-        return languages;
-    }
-
-    private void registerBspConfigTask(Project project, List<String> languages, Configuration bspConfig, Configuration bspServer) {
-        BspExtension bspExtension = project.getExtensions().getByType(BspExtension.class);
-
+    private void registerBspConfigTask(Project project, BspExtension bspExtension, Configuration bspConfig, Configuration bspServer) {
         RegularFile outputFile = project.getRootProject()
                 .getLayout()
                 .getProjectDirectory()
