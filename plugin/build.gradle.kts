@@ -41,6 +41,12 @@ gradlePlugin {
 
 testing {
     suites {
+        getByName<JvmTestSuite>("test") {
+            useJUnitJupiter()
+
+            dependencies { implementation(libs.hamcrest) }
+        }
+
         register<JvmTestSuite>("functionalTest") {
             sources {
                 gradlePlugin.testSourceSets(this)
