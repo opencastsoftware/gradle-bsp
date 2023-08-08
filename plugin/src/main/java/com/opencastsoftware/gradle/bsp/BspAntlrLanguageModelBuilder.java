@@ -26,7 +26,7 @@ public abstract class BspAntlrLanguageModelBuilder extends BspLanguageModelBuild
 
     @Nullable
     @Override
-    String getDisplayNameFor(Project project, SourceSet sourceSet) {
+    protected String getDisplayNameFor(Project project, SourceSet sourceSet) {
         return sourceSet.getExtensions()
                 .getByType(AntlrSourceDirectorySet.class)
                 .getDisplayName();
@@ -34,13 +34,13 @@ public abstract class BspAntlrLanguageModelBuilder extends BspLanguageModelBuild
 
     @Nullable
     @Override
-    String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
+    protected String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
         return null;
     }
 
     @Nullable
     @Override
-    Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
+    protected Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
         return null;
     }
 }

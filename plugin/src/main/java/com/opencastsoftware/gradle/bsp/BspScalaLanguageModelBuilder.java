@@ -32,7 +32,7 @@ public abstract class BspScalaLanguageModelBuilder extends BspLanguageModelBuild
 
     @Nullable
     @Override
-    String getDisplayNameFor(Project project, SourceSet sourceSet) {
+    protected String getDisplayNameFor(Project project, SourceSet sourceSet) {
         return sourceSet.getExtensions()
                 .getByType(ScalaSourceDirectorySet.class)
                 .getDisplayName();
@@ -40,13 +40,13 @@ public abstract class BspScalaLanguageModelBuilder extends BspLanguageModelBuild
 
     @Nullable
     @Override
-    String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
+    protected String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
         return "scala";
     }
 
     @Nullable
     @Override
-    Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
+    protected Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
         var scalaRuntime = project.getExtensions().findByType(ScalaRuntime.class);
 
         if (scalaRuntime == null) {

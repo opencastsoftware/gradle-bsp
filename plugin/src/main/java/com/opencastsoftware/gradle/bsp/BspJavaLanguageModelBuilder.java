@@ -24,19 +24,19 @@ public abstract class BspJavaLanguageModelBuilder extends BspLanguageModelBuilde
 
     @Nullable
     @Override
-    String getDisplayNameFor(Project project, SourceSet sourceSet) {
+    protected String getDisplayNameFor(Project project, SourceSet sourceSet) {
         return sourceSet.getJava().getDisplayName();
     }
 
     @Nullable
     @Override
-    String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
+    protected String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
         return "jvm";
     }
 
     @Nullable
     @Override
-    Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
+    protected Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
         return getJvmBuildTargetFor(project);
     }
 }

@@ -19,20 +19,20 @@ public abstract class BspLanguageModelBuilder extends BspModelBuilder {
     public abstract boolean isEnabledFor(SourceSet sourceSet);
 
     @Nullable
-    abstract String getDisplayNameFor(Project project, SourceSet sourceSet);
+    protected abstract String getDisplayNameFor(Project project, SourceSet sourceSet);
 
     @Override
-    BspBuildTargetId getBuildTargetIdFor(Project project, SourceSet sourceSet) {
+    protected BspBuildTargetId getBuildTargetIdFor(Project project, SourceSet sourceSet) {
         var sourceSetName = sourceSet.getTaskName(null, getLanguageId());
         var buildTargetUri = project.getProjectDir().toURI().resolve("?sourceSet=" + sourceSetName);
         return new DefaultBspBuildTargetId(buildTargetUri);
     }
 
     @Nullable
-    abstract String getBuildTargetDataKindFor(Project project, SourceSet sourceSet);
+    protected abstract String getBuildTargetDataKindFor(Project project, SourceSet sourceSet);
 
     @Nullable
-    abstract Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet);
+    protected abstract Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet);
 
     public @Nullable BspBuildTarget getBuildTargetFor(Project project, SourceSet sourceSet) {
         if (!isEnabledFor(sourceSet)) {
