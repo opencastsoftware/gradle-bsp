@@ -13,7 +13,10 @@ allprojects {
     repositories {
         maven { url = uri("https://repo.gradle.org/gradle/libs-releases") }
     }
-
-    apply<com.opencastsoftware.gradle.bsp.BspPlugin>()
 }
 
+projectsEvaluated {
+    rootProject.subprojects {
+        apply<com.opencastsoftware.gradle.bsp.BspPlugin>()
+    }
+}
