@@ -9,4 +9,11 @@ initscript {
     }
 }
 
-allprojects { apply<com.opencastsoftware.gradle.bsp.BspPlugin>() }
+allprojects {
+    repositories {
+        maven { url = uri("https://repo.gradle.org/gradle/libs-releases") }
+    }
+
+    apply<com.opencastsoftware.gradle.bsp.BspPlugin>()
+}
+

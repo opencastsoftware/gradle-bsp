@@ -14,7 +14,7 @@ import org.gradle.workers.WorkerExecutor;
 
 import javax.inject.Inject;
 
-public abstract class GenerateBspConfig extends DefaultTask {
+public abstract class BspConfigTask extends DefaultTask {
     @InputFiles
     @Classpath
     public abstract ConfigurableFileCollection getTaskClasspath();
@@ -38,7 +38,7 @@ public abstract class GenerateBspConfig extends DefaultTask {
             workerSpec.getClasspath().from(getTaskClasspath());
         });
 
-        workQueue.submit(GenerateBspConfigAction.class, parameters -> {
+        workQueue.submit(BspConfigAction.class, parameters -> {
             parameters.getBuildServerClasspath().from(getBuildServerClasspath());
             parameters.getLanguages().set(getLanguages());
             parameters.getOutputFile().set(getOutputFile());

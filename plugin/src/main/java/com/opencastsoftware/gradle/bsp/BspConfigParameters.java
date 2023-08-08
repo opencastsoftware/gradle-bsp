@@ -13,7 +13,7 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.workers.WorkParameters;
 
-public interface GenerateBspConfigParameters extends WorkParameters {
+public interface BspConfigParameters extends WorkParameters {
 
     @InputFiles
     @Classpath

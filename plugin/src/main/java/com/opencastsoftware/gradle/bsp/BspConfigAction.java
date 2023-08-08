@@ -18,7 +18,7 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class GenerateBspConfigAction implements WorkAction<GenerateBspConfigParameters> {
+public abstract class BspConfigAction implements WorkAction<BspConfigParameters> {
 
     @Override
     public void execute() {
