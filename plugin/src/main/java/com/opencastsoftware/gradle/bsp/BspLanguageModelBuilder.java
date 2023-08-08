@@ -12,29 +12,29 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
 
-public interface BspLanguageModelBuilder extends BspModelBuilder {
+public abstract class BspLanguageModelBuilder extends BspModelBuilder {
 
-    String getLanguageId();
+    public abstract String getLanguageId();
 
-    boolean isEnabledFor(SourceSet sourceSet);
+    public abstract boolean isEnabledFor(SourceSet sourceSet);
 
     @Nullable
-    String getDisplayNameFor(Project project, SourceSet sourceSet);
+    abstract String getDisplayNameFor(Project project, SourceSet sourceSet);
 
     @Override
-    default BspBuildTargetId getBuildTargetIdFor(Project project, SourceSet sourceSet) {
+    BspBuildTargetId getBuildTargetIdFor(Project project, SourceSet sourceSet) {
         var sourceSetName = sourceSet.getTaskName(null, getLanguageId());
         var buildTargetUri = project.getProjectDir().toURI().resolve("?sourceSet=" + sourceSetName);
         return new DefaultBspBuildTargetId(buildTargetUri);
     }
 
     @Nullable
-    String getBuildTargetDataKindFor(Project project, SourceSet sourceSet);
+    abstract String getBuildTargetDataKindFor(Project project, SourceSet sourceSet);
 
     @Nullable
-    Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet);
+    abstract Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet);
 
-    default @Nullable BspBuildTarget getBuildTargetFor(Project project, SourceSet sourceSet) {
+    public @Nullable BspBuildTarget getBuildTargetFor(Project project, SourceSet sourceSet) {
         if (!isEnabledFor(sourceSet)) {
             return null;
         }
@@ -65,6 +65,4 @@ public interface BspLanguageModelBuilder extends BspModelBuilder {
             );
         }
     }
-
-
 }

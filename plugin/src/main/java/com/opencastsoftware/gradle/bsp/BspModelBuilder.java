@@ -21,27 +21,27 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public interface BspModelBuilder {
+public abstract class BspModelBuilder {
     String APPLICATION_TAG = "application";
     String LIBRARY_TAG = "library";
     String TEST_TAG = "test";
     String INTEGRATION_TEST_TAG = "integration-test";
 
-    default BspBuildTargetId getBuildTargetIdFor(Project project) {
+    BspBuildTargetId getBuildTargetIdFor(Project project) {
         return new DefaultBspBuildTargetId(project.getProjectDir().toURI());
     }
 
-    default BspBuildTargetId getBuildTargetIdFor(Project project, SourceSet sourceSet) {
+    BspBuildTargetId getBuildTargetIdFor(Project project, SourceSet sourceSet) {
         var sourceSetName = sourceSet.getTaskName(null, null);
         var buildTargetUri = project.getProjectDir().toURI().resolve("?sourceSet=" + sourceSetName);
         return new DefaultBspBuildTargetId(buildTargetUri);
     }
 
-    default String getBaseDirectoryFor(Project project) {
+    String getBaseDirectoryFor(Project project) {
         return project.getProjectDir().toURI().toString();
     }
 
-    default List<String> getBuildTargetTagsFor(Project project) {
+    List<String> getBuildTargetTagsFor(Project project) {
         var tags = new ArrayList<String>();
 
         var isApplication = project.getPlugins().hasPlugin(ApplicationPlugin.class);
@@ -57,7 +57,7 @@ public interface BspModelBuilder {
         return tags;
     }
 
-    default List<String> getBuildTargetTagsFor(Project project, SourceSet sourceSet) {
+    List<String> getBuildTargetTagsFor(Project project, SourceSet sourceSet) {
         var tags = new ArrayList<String>();
 
         var isApplication = SourceSet.isMain(sourceSet) && project.getPlugins().hasPlugin(ApplicationPlugin.class);
@@ -86,18 +86,18 @@ public interface BspModelBuilder {
         return tags;
     }
 
-    default BspBuildTargetCapabilities getBuildTargetCapabilitiesFor(Project project) {
+    BspBuildTargetCapabilities getBuildTargetCapabilitiesFor(Project project) {
         var isApplication =  project.getPlugins().hasPlugin(ApplicationPlugin.class);
         return new DefaultBspBuildTargetCapabilities(true, true, isApplication, false);
     }
 
-    default BspBuildTargetCapabilities getBuildTargetCapabilitiesFor(Project project, SourceSet sourceSet) {
+    BspBuildTargetCapabilities getBuildTargetCapabilitiesFor(Project project, SourceSet sourceSet) {
         var isApplication = SourceSet.isMain(sourceSet) && project.getPlugins().hasPlugin(ApplicationPlugin.class);
         var isTest = getTestSourceSets(project).contains(sourceSet);
         return new DefaultBspBuildTargetCapabilities(true, isTest, isApplication, false);
     }
 
-    default @Nullable BspJvmBuildTarget getJvmBuildTargetFor(Project project) {
+    @Nullable BspJvmBuildTarget getJvmBuildTargetFor(Project project) {
         var javaToolChainService = project.getExtensions().findByType(JavaToolchainService.class);
 
         if (javaToolChainService == null) {
@@ -115,7 +115,7 @@ public interface BspModelBuilder {
         );
     }
 
-    default Set<SourceSet> getTestSourceSets(Project project) {
+    Set<SourceSet> getTestSourceSets(Project project) {
         var testingExtension = project.getExtensions().findByType(TestingExtension.class);
 
         return Optional.ofNullable(testingExtension)
@@ -126,7 +126,7 @@ public interface BspModelBuilder {
                 .orElse(Set.of());
     }
 
-    default Set<SourceSet> getTestSourceSetsWithType(Project project, String testSuiteType) {
+    Set<SourceSet> getTestSourceSetsWithType(Project project, String testSuiteType) {
         var testingExtension = project.getExtensions().findByType(TestingExtension.class);
 
         return Optional.ofNullable(testingExtension)

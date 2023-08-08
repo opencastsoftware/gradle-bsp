@@ -49,7 +49,7 @@ public class BspPlugin implements Plugin<Project> {
             config.setCanBeConsumed(false);
             config.setCanBeResolved(true);
             config.setDescription(
-                    "Dependencies of the gradle-bsp plugin connection file generation task");
+                    "Dependencies of the gradle-bsp connection file generation task");
             config.defaultDependencies(
                     deps -> deps.add(project.getDependencies().create(JSON_JAVA_MAVEN_COORD)));
         });

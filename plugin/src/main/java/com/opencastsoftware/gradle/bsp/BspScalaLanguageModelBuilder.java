@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.Serializable;
 import java.net.URI;
 
-public abstract class BspScalaLanguageModelBuilder implements BspLanguageModelBuilder {
+public abstract class BspScalaLanguageModelBuilder extends BspLanguageModelBuilder {
     private static final String SCALA_LANGUAGE_ID = "scala";
 
     @Override
@@ -32,7 +32,7 @@ public abstract class BspScalaLanguageModelBuilder implements BspLanguageModelBu
 
     @Nullable
     @Override
-    public String getDisplayNameFor(Project project, SourceSet sourceSet) {
+    String getDisplayNameFor(Project project, SourceSet sourceSet) {
         return sourceSet.getExtensions()
                 .getByType(ScalaSourceDirectorySet.class)
                 .getDisplayName();
@@ -40,13 +40,13 @@ public abstract class BspScalaLanguageModelBuilder implements BspLanguageModelBu
 
     @Nullable
     @Override
-    public String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
+    String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
         return "scala";
     }
 
     @Nullable
     @Override
-    public Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
+    Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
         var scalaRuntime = project.getExtensions().findByType(ScalaRuntime.class);
 
         if (scalaRuntime == null) {

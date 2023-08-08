@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 
-public abstract class BspGroovyLanguageModelBuilder implements BspLanguageModelBuilder {
+public abstract class BspGroovyLanguageModelBuilder extends BspLanguageModelBuilder {
     private static final String GROOVY_LANGUAGE_ID = "groovy";
 
     @Override
@@ -26,7 +26,7 @@ public abstract class BspGroovyLanguageModelBuilder implements BspLanguageModelB
 
     @Nullable
     @Override
-    public String getDisplayNameFor(Project project, SourceSet sourceSet) {
+    String getDisplayNameFor(Project project, SourceSet sourceSet) {
         return sourceSet.getExtensions()
                 .getByType(GroovySourceDirectorySet.class)
                 .getDisplayName();
@@ -34,13 +34,13 @@ public abstract class BspGroovyLanguageModelBuilder implements BspLanguageModelB
 
     @Nullable
     @Override
-    public String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
+    String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
         return "jvm";
     }
 
     @Nullable
     @Override
-    public Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
+    Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
         return getJvmBuildTargetFor(project);
     }
 }

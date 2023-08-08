@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 
-public abstract class BspJavaLanguageModelBuilder implements BspLanguageModelBuilder {
+public abstract class BspJavaLanguageModelBuilder extends BspLanguageModelBuilder {
     private static final String JAVA_LANGUAGE_ID = "java";
 
     public String getLanguageId() {
@@ -24,19 +24,19 @@ public abstract class BspJavaLanguageModelBuilder implements BspLanguageModelBui
 
     @Nullable
     @Override
-    public String getDisplayNameFor(Project project, SourceSet sourceSet) {
+    String getDisplayNameFor(Project project, SourceSet sourceSet) {
         return sourceSet.getJava().getDisplayName();
     }
 
     @Nullable
     @Override
-    public String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
+    String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
         return "jvm";
     }
 
     @Nullable
     @Override
-    public Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
+    Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
         return getJvmBuildTargetFor(project);
     }
 }

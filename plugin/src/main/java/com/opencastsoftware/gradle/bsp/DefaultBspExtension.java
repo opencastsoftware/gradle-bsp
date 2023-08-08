@@ -6,8 +6,10 @@ package com.opencastsoftware.gradle.bsp;
 
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.SetProperty;
+import org.gradle.api.reflect.HasPublicType;
+import org.gradle.api.reflect.TypeOf;
 
-public abstract class DefaultBspExtension implements BspExtension {
+public abstract class DefaultBspExtension implements BspExtension, HasPublicType {
     private final SetProperty<String> supportedLanguages;
     private final SetProperty<BspLanguageModelBuilder> languageModelBuilders;
 
@@ -24,5 +26,10 @@ public abstract class DefaultBspExtension implements BspExtension {
     @Override
     public SetProperty<BspLanguageModelBuilder> getLanguageModelBuilders() {
         return languageModelBuilders;
+    }
+
+    @Override
+    public TypeOf<?> getPublicType() {
+        return TypeOf.typeOf(BspExtension.class);
     }
 }

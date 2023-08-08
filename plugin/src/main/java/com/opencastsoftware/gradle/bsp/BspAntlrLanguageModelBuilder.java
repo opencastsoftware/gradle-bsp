@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 
-public abstract class BspAntlrLanguageModelBuilder implements BspLanguageModelBuilder {
+public abstract class BspAntlrLanguageModelBuilder extends BspLanguageModelBuilder {
     private static final String ANTLR_LANGUAGE_ID = "antlr";
 
     @Override
@@ -26,7 +26,7 @@ public abstract class BspAntlrLanguageModelBuilder implements BspLanguageModelBu
 
     @Nullable
     @Override
-    public String getDisplayNameFor(Project project, SourceSet sourceSet) {
+    String getDisplayNameFor(Project project, SourceSet sourceSet) {
         return sourceSet.getExtensions()
                 .getByType(AntlrSourceDirectorySet.class)
                 .getDisplayName();
@@ -34,13 +34,13 @@ public abstract class BspAntlrLanguageModelBuilder implements BspLanguageModelBu
 
     @Nullable
     @Override
-    public String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
+    String getBuildTargetDataKindFor(Project project, SourceSet sourceSet) {
         return null;
     }
 
     @Nullable
     @Override
-    public Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
+    Serializable getBuildTargetDataFor(Project project, SourceSet sourceSet) {
         return null;
     }
 }
