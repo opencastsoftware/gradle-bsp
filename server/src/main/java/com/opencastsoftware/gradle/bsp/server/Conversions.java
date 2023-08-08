@@ -57,6 +57,8 @@ public class Conversions {
                 bspTarget.setData(Conversions.toBspJvmBuildTarget(data));
             } else if (dataKind.equals("scala")) {
                 bspTarget.setData(Conversions.toBspScalaBuildTarget(data));
+            } else {
+                bspTarget.setData(data);
             }
         }
 

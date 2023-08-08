@@ -5,6 +5,7 @@
 package com.opencastsoftware.gradle.bsp.server;
 
 import ch.epfl.scala.bsp4j.*;
+import com.opencastsoftware.gradle.bsp.model.BspBuildTarget;
 import com.opencastsoftware.gradle.bsp.model.BspWorkspace;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
@@ -175,12 +176,19 @@ public class GradleBspServer implements BuildServer {
         }
     }
 
+    private boolean hasClientSupportedLanguage(BspBuildTarget target) {
+       return clientCapabilities.get()
+               .getLanguageIds().stream()
+               .anyMatch(supportedLanguage -> target.languageIds().contains(supportedLanguage));
+    }
+
     @Override
     public CompletableFuture<WorkspaceBuildTargetsResult> workspaceBuildTargets() {
         return ifInitialized(cancelToken -> {
             cancelToken.checkCanceled();
             var buildTargets = workspaceModel.get()
                     .buildTargets().stream()
+                    .filter(this::hasClientSupportedLanguage)
                     .map(Conversions::toBspBuildTarget)
                     .collect(Collectors.toList());
             return new WorkspaceBuildTargetsResult(buildTargets);
