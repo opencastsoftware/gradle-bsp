@@ -49,7 +49,9 @@ public abstract class BspLanguageModelBuilder extends BspModelBuilder {
                     getBuildTargetTagsFor(project, sourceSet),
                     List.of(getLanguageId()),
                     List.of(),
-                    getBuildTargetCapabilitiesFor(project, sourceSet)
+                    // Language source sets can't really be interacted with directly;
+                    // It's very difficult to get the task that a SourceDirectorySet is compiledBy
+                    new DefaultBspBuildTargetCapabilities(false, false, false, false)
             );
         } else {
             return new DefaultBspBuildTarget(
@@ -59,7 +61,7 @@ public abstract class BspLanguageModelBuilder extends BspModelBuilder {
                     getBuildTargetTagsFor(project, sourceSet),
                     List.of(getLanguageId()),
                     List.of(),
-                    getBuildTargetCapabilitiesFor(project, sourceSet),
+                    new DefaultBspBuildTargetCapabilities(false, false, false, false),
                     getBuildTargetDataKindFor(project, sourceSet),
                     data
             );

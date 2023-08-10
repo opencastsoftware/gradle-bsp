@@ -38,4 +38,28 @@ public class BspModelTest {
         EqualsVerifier.forClass(DefaultBspScalaBuildTarget.class).usingGetClass().verify();
         ToStringVerifier.forClass(DefaultBspScalaBuildTarget.class).verify();
     }
+
+    @Test
+    void testBspWorkspace() {
+        EqualsVerifier.forClass(DefaultBspWorkspace.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspWorkspace.class).verify();
+    }
+
+    @Test
+    void testBspCompileTasks() {
+        EqualsVerifier.forClass(DefaultBspCompileTasks.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspCompileTasks.class).verify();
+    }
+
+    @Test
+    void testBspTestTasks() {
+        EqualsVerifier.forClass(DefaultBspTestTasks.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspTestTasks.class).verify();
+    }
+
+    @Test
+    void testBspRunTasks() {
+        EqualsVerifier.forClass(DefaultBspRunTasks.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspRunTasks.class).verify();
+    }
 }

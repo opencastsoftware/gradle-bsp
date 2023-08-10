@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class BspToolingModelBuilder extends BspModelBuilder implements ToolingModelBuilder {
+public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements ToolingModelBuilder {
     @Override
     public boolean canBuild(String modelName) {
         return modelName.equals(BspWorkspace.class.getName());

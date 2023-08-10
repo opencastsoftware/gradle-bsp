@@ -48,7 +48,7 @@ public class BspPluginTest {
         var project = ProjectBuilder.builder().build();
         project.getPlugins().apply("com.opencastsoftware.gradle.bsp");
         var extension = project.getExtensions().getByType(BspExtension.class);
-        assertThat(extension.getSupportedLanguages().get(), contains("java", "groovy", "scala", "antlr"));
+        assertThat(extension.getSupportedLanguages().get(), containsInAnyOrder("java", "groovy", "scala", "antlr"));
     }
 
     @Test

@@ -36,7 +36,10 @@ public class BspPlugin implements Plugin<Project> {
             bspExtension.getLanguageModelBuilders().add(objectFactory.newInstance(BspGroovyLanguageModelBuilder.class));
             bspExtension.getLanguageModelBuilders().add(objectFactory.newInstance(BspScalaLanguageModelBuilder.class));
             bspExtension.getLanguageModelBuilders().add(objectFactory.newInstance(BspAntlrLanguageModelBuilder.class));
-            builderRegistry.register(new BspToolingModelBuilder());
+            builderRegistry.register(new BspWorkspaceToolingModelBuilder());
+            builderRegistry.register(new BspCompileTasksToolingModelBuilder());
+            builderRegistry.register(new BspTestTasksToolingModelBuilder());
+            builderRegistry.register(new BspRunTasksToolingModelBuilder());
             Configuration bspConfig = createBspConfigConfiguration(project);
             Configuration bspServer = createBspServerConfiguration(project);
             registerBspConfigTask(project, bspExtension, bspConfig, bspServer);

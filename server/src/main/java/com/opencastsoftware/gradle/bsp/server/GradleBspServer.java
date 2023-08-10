@@ -5,25 +5,34 @@
 package com.opencastsoftware.gradle.bsp.server;
 
 import ch.epfl.scala.bsp4j.*;
-import com.opencastsoftware.gradle.bsp.model.BspBuildTarget;
-import com.opencastsoftware.gradle.bsp.model.BspWorkspace;
+import com.opencastsoftware.gradle.bsp.model.*;
+import com.opencastsoftware.gradle.bsp.server.util.Conversions;
+import com.opencastsoftware.gradle.bsp.server.util.GradleResults;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseError;
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
+import org.gradle.tooling.ConfigurableLauncher;
+import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
+import org.gradle.tooling.events.OperationType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ExitCode;
 
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GradleBspServer implements BuildServer {
     private static final Logger logger = LoggerFactory.getLogger(GradleBspServer.class);
@@ -37,7 +46,11 @@ public class GradleBspServer implements BuildServer {
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private final AtomicReference<ProjectConnection> gradleConnection;
     private final AtomicReference<BspWorkspace> workspaceModel;
+    private final AtomicReference<BspCompileTasks> compileTasks;
+    private final AtomicReference<BspTestTasks> testTasks;
+    private final AtomicReference<BspRunTasks> runTasks;
     private final AtomicReference<BuildClientCapabilities> clientCapabilities = new AtomicReference<>();
+
 
     private final ThreadFactory threadFactory = new ThreadFactory() {
         private final AtomicLong count = new AtomicLong(0);
@@ -61,6 +74,9 @@ public class GradleBspServer implements BuildServer {
         this.initScriptPath = initScriptPath;
         this.gradleConnection = new AtomicReference<>(gradleConnection);
         this.workspaceModel = new AtomicReference<>(getCustomModel(gradleConnection, BspWorkspace.class));
+        this.compileTasks = new AtomicReference<>(getCustomModel(gradleConnection, BspCompileTasks.class));
+        this.testTasks = new AtomicReference<>(getCustomModel(gradleConnection, BspTestTasks.class));
+        this.runTasks = new AtomicReference<>(getCustomModel(gradleConnection, BspRunTasks.class));
     }
 
     private <T> T getCustomModel(ProjectConnection connection, Class<T> customModelClass) {
@@ -121,6 +137,42 @@ public class GradleBspServer implements BuildServer {
         }
     }
 
+    List<String> getLanguageIds(Predicate<? super BspBuildTarget> targetFilter) {
+        return workspaceModel.get().buildTargets().stream()
+                .filter(targetFilter)
+                .flatMap(target -> target.languageIds().stream())
+                .distinct().collect(Collectors.toList());
+    }
+
+    BuildServerCapabilities getCapabilities() {
+        var serverCapabilities = new BuildServerCapabilities();
+
+        // This is a very loose approximation - targets can contain multiple languages
+        // and e.g. ANTLR can't be run even if it's contained in a Java target that can
+        var compilableLanguageIds = getLanguageIds(t -> t.capabilities().canCompile());
+        var testableLanguageIds = getLanguageIds(t -> t.capabilities().canTest());
+        var runnableLanguageIds = getLanguageIds(t -> t.capabilities().canRun());
+        var compileCapabilities = new CompileProvider(compilableLanguageIds);
+        var testCapabilities = new TestProvider(testableLanguageIds);
+        var runCapabilities = new RunProvider(runnableLanguageIds);
+
+        serverCapabilities.setCanReload(true);
+
+        if (!compilableLanguageIds.isEmpty()) {
+            serverCapabilities.setCompileProvider(compileCapabilities);
+        }
+
+        if (!testableLanguageIds.isEmpty()) {
+            serverCapabilities.setTestProvider(testCapabilities);
+        }
+
+        if (!runnableLanguageIds.isEmpty()) {
+            serverCapabilities.setRunProvider(runCapabilities);
+        }
+
+        return serverCapabilities;
+    }
+
     @Override
     public CompletableFuture<InitializeBuildResult> buildInitialize(InitializeBuildParams params) {
         return CompletableFutures.computeAsync(executor, cancelToken -> {
@@ -128,15 +180,11 @@ public class GradleBspServer implements BuildServer {
 
             clientCapabilities.set(params.getCapabilities());
 
-            var serverCapabilities = new BuildServerCapabilities();
-
-            serverCapabilities.setCanReload(true);
-
             return new InitializeBuildResult(
                     "Gradle Build Server",
                     BuildInfo.version,
                     BuildInfo.bspVersion,
-                    serverCapabilities);
+                    getCapabilities());
         });
     }
 
@@ -177,9 +225,9 @@ public class GradleBspServer implements BuildServer {
     }
 
     private boolean hasClientSupportedLanguage(BspBuildTarget target) {
-       return clientCapabilities.get()
-               .getLanguageIds().stream()
-               .anyMatch(supportedLanguage -> target.languageIds().contains(supportedLanguage));
+        return clientCapabilities.get()
+                .getLanguageIds().stream()
+                .anyMatch(supportedLanguage -> target.languageIds().contains(supportedLanguage));
     }
 
     @Override
@@ -199,10 +247,18 @@ public class GradleBspServer implements BuildServer {
     public CompletableFuture<Object> workspaceReload() {
         return ifInitializedAsync(cancelToken -> {
             cancelToken.checkCanceled();
-            return getCustomModelFuture(this.gradleConnection.get(), BspWorkspace.class)
-                    .thenApply(workspaceModel -> {
+            var workspaceFuture = getCustomModelFuture(this.gradleConnection.get(), BspWorkspace.class);
+            var compileTasksFuture = getCustomModelFuture(this.gradleConnection.get(), BspCompileTasks.class);
+            var testTasksFuture = getCustomModelFuture(this.gradleConnection.get(), BspTestTasks.class);
+            var runTasksFuture = getCustomModelFuture(this.gradleConnection.get(), BspRunTasks.class);
+            return CompletableFuture
+                    .allOf(workspaceFuture, compileTasksFuture, testTasksFuture, runTasksFuture)
+                    .thenApply(v -> {
                         cancelToken.checkCanceled();
-                        this.workspaceModel.set(workspaceModel);
+                        this.workspaceModel.set(workspaceFuture.join());
+                        this.compileTasks.set(compileTasksFuture.join());
+                        this.testTasks.set(testTasksFuture.join());
+                        this.runTasks.set(runTasksFuture.join());
                         return null;
                     });
         });
@@ -238,22 +294,116 @@ public class GradleBspServer implements BuildServer {
         throw new UnsupportedOperationException("Unimplemented method 'buildTargetOutputPaths'");
     }
 
+    <T extends ConfigurableLauncher<T>> T configureBuildLauncher(CancelChecker cancelToken, String originId, Function<ProjectConnection, T> launcherFn) {
+        var gradleCanceller = GradleConnector.newCancellationTokenSource();
+        var operationTypes = Set.of(OperationType.BUILD_PHASE, OperationType.TASK);
+        var progressListener = new BuildClientProgressListener(client, cancelToken, gradleCanceller, originId);
+        return launcherFn.apply(gradleConnection.get())
+                .withCancellationToken(gradleCanceller.token())
+                .addProgressListener(progressListener, operationTypes);
+    }
+
+    List<String> getTargetUris(CompileParams params) {
+        return params.getTargets().stream()
+                .map(BuildTargetIdentifier::getUri)
+                .collect(Collectors.toList());
+    }
+
+    String[] getCompileTasksFrom(List<String> targetUris) {
+        var compileTaskMapping = compileTasks.get().getCompileTasks();
+
+        return targetUris.stream().flatMap(target -> {
+            return Stream.ofNullable(compileTaskMapping.get(target));
+        }).distinct().toArray(String[]::new);
+    }
+
     @Override
     public CompletableFuture<CompileResult> buildTargetCompile(CompileParams params) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildTargetCompile'");
+        return ifInitializedAsync(cancelToken -> {
+            var compileResult = new CompileResult(StatusCode.OK);
+            compileResult.setOriginId(params.getOriginId());
+
+            var targetUris = getTargetUris(params);
+            var targetCompileTasks = getCompileTasksFrom(targetUris);
+
+            if (targetCompileTasks.length == 0) {
+                logger.error("No compile tasks could be found for build targets {}", String.join(", ", targetUris));
+                compileResult.setStatusCode(StatusCode.ERROR);
+                return CompletableFuture.completedFuture(compileResult);
+            }
+
+            logger.info("Running build tasks {}", String.join(", ", targetCompileTasks));
+
+            var build = configureBuildLauncher(cancelToken, params.getOriginId(), ProjectConnection::newBuild);
+
+            return GradleResults.handleCompile(compileResult, build.forTasks(targetCompileTasks));
+        });
+    }
+
+    List<String> getTargetUris(TestParams params) {
+        return params.getTargets().stream()
+                .map(BuildTargetIdentifier::getUri)
+                .collect(Collectors.toList());
+    }
+
+    String[] getTestTasksFrom(List<String> targetUris) {
+        var testTaskMapping = testTasks.get().getTestTasks();
+
+        return targetUris.stream().flatMap(target -> {
+            return Stream.ofNullable(testTaskMapping.get(target))
+                    .flatMap(Collection::stream);
+        }).distinct().toArray(String[]::new);
     }
 
     @Override
     public CompletableFuture<TestResult> buildTargetTest(TestParams params) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildTargetTest'");
+        return ifInitializedAsync(cancelToken -> {
+            var testResult = new TestResult(StatusCode.OK);
+            testResult.setOriginId(params.getOriginId());
+
+            var targetUris = getTargetUris(params);
+            var targetTestTasks = getTestTasksFrom(targetUris);
+
+            if (targetTestTasks.length == 0) {
+                logger.error("No test tasks could be found for build targets {}", String.join(", ", targetUris));
+                testResult.setStatusCode(StatusCode.ERROR);
+                return CompletableFuture.completedFuture(testResult);
+            }
+
+            logger.info("Running build tasks {}", String.join(", ", targetTestTasks));
+
+            var build = configureBuildLauncher(cancelToken, params.getOriginId(), ProjectConnection::newTestLauncher);
+
+            return GradleResults.handleTest(testResult, build.forTasks(targetTestTasks));
+        });
+    }
+
+    String[] getRunTaskFor(String targetUri) {
+        var runTaskMapping = runTasks.get().getRunTasks();
+        return Stream.ofNullable(runTaskMapping.get(targetUri)).toArray(String[]::new);
     }
 
     @Override
     public CompletableFuture<RunResult> buildTargetRun(RunParams params) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildTargetRun'");
+        return ifInitializedAsync(cancelToken -> {
+            var runResult = new RunResult(StatusCode.OK);
+            runResult.setOriginId(params.getOriginId());
+
+            var targetUri = params.getTarget().getUri().toString();
+            var targetRunTasks = getRunTaskFor(targetUri);
+
+            if (targetRunTasks.length == 0) {
+                logger.error("No run tasks could be found for build target {}", targetUri);
+                runResult.setStatusCode(StatusCode.ERROR);
+                return CompletableFuture.completedFuture(runResult);
+            }
+
+            logger.info("Running build tasks {}", String.join(", ", targetRunTasks));
+
+            var build = configureBuildLauncher(cancelToken, params.getOriginId(), ProjectConnection::newBuild);
+
+            return GradleResults.handleRun(runResult, build.forTasks(targetRunTasks));
+        });
     }
 
     @Override
