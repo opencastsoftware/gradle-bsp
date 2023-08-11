@@ -62,4 +62,10 @@ public class BspModelTest {
         EqualsVerifier.forClass(DefaultBspRunTasks.class).usingGetClass().verify();
         ToStringVerifier.forClass(DefaultBspRunTasks.class).verify();
     }
+
+    @Test
+    void testBspCleanTasks() {
+        EqualsVerifier.forClass(DefaultBspCleanTasks.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspCleanTasks.class).verify();
+    }
 }

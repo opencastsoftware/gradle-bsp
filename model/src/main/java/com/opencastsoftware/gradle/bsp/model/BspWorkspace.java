@@ -9,4 +9,8 @@ import java.util.List;
 
 public interface BspWorkspace extends Serializable {
     List<BspBuildTarget> buildTargets();
+    BspCompileTasks compileTasks();
+    BspTestTasks testTasks();
+    BspRunTasks runTasks();
+    BspCleanTasks cleanTasks();
 }

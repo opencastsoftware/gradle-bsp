@@ -18,6 +18,18 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements ToolingModelBuilder {
+    BspCompileTasksToolingModelBuilder compileTasksBuilder;
+    BspTestTasksToolingModelBuilder testTasksBuilder;
+    BspRunTasksToolingModelBuilder runTasksBuilder;
+    BspCleanTasksToolingModelBuilder cleanTasksBuilder;
+
+    public BspWorkspaceToolingModelBuilder() {
+       this.compileTasksBuilder = new BspCompileTasksToolingModelBuilder();
+       this.testTasksBuilder = new BspTestTasksToolingModelBuilder();
+       this.runTasksBuilder = new BspRunTasksToolingModelBuilder();
+       this.cleanTasksBuilder = new BspCleanTasksToolingModelBuilder();
+    }
+
     @Override
     public boolean canBuild(String modelName) {
         return modelName.equals(BspWorkspace.class.getName());
@@ -111,6 +123,16 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
 
     @Override
     public BspWorkspace buildAll(String modelName, Project rootProject) {
+        var compileTasksName = BspCompileTasks.class.getName();
+        var testTasksName = BspTestTasks.class.getName();
+        var runTasksName = BspRunTasks.class.getName();
+        var cleanTasksName = BspCleanTasks.class.getName();
+
+        var compileTasks = compileTasksBuilder.buildAll(compileTasksName, rootProject);
+        var testTasks = testTasksBuilder.buildAll(testTasksName, rootProject);
+        var runTasks = runTasksBuilder.buildAll(runTasksName, rootProject);
+        var cleanTasks = cleanTasksBuilder.buildAll(cleanTasksName, rootProject);
+
         var buildTargets = new ArrayList<BspBuildTarget>();
 
         rootProject.getAllprojects().forEach(project -> {
@@ -146,6 +168,6 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
             }
         });
 
-        return new DefaultBspWorkspace(buildTargets);
+        return new DefaultBspWorkspace(buildTargets, compileTasks, testTasks, runTasks, cleanTasks);
     }
 }

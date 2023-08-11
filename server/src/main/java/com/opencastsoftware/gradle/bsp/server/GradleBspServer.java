@@ -7,6 +7,7 @@ package com.opencastsoftware.gradle.bsp.server;
 import ch.epfl.scala.bsp4j.*;
 import com.opencastsoftware.gradle.bsp.model.*;
 import com.opencastsoftware.gradle.bsp.server.util.Conversions;
+import com.opencastsoftware.gradle.bsp.server.util.DaemonThreadFactory;
 import com.opencastsoftware.gradle.bsp.server.util.GradleResults;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -45,38 +45,17 @@ public class GradleBspServer implements BuildServer {
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private final AtomicReference<ProjectConnection> gradleConnection;
-    private final AtomicReference<BspWorkspace> workspaceModel;
-    private final AtomicReference<BspCompileTasks> compileTasks;
-    private final AtomicReference<BspTestTasks> testTasks;
-    private final AtomicReference<BspRunTasks> runTasks;
+    private final AtomicReference<BspWorkspace> workspace;
     private final AtomicReference<BuildClientCapabilities> clientCapabilities = new AtomicReference<>();
 
-
-    private final ThreadFactory threadFactory = new ThreadFactory() {
-        private final AtomicLong count = new AtomicLong(0);
-        private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler = (t, ex) -> {
-            logger.error("Uncaught exception in thread {}", t.getName(), ex);
-        };
-
-        @Override
-        public Thread newThread(Runnable runnable) {
-            var thread = Executors.defaultThreadFactory().newThread(runnable);
-            thread.setDaemon(true);
-            thread.setName(String.format("gradle-buildserver-%d", count.getAndIncrement()));
-            thread.setUncaughtExceptionHandler(uncaughtExceptionHandler);
-            return thread;
-        }
-    };
-
+    private final ThreadFactory threadFactory = DaemonThreadFactory.create(logger, "gradle-buildserver-%d");
     private final ExecutorService executor = Executors.newCachedThreadPool(threadFactory);
 
     public GradleBspServer(ProjectConnection gradleConnection, Path initScriptPath) {
         this.initScriptPath = initScriptPath;
         this.gradleConnection = new AtomicReference<>(gradleConnection);
-        this.workspaceModel = new AtomicReference<>(getCustomModel(gradleConnection, BspWorkspace.class));
-        this.compileTasks = new AtomicReference<>(getCustomModel(gradleConnection, BspCompileTasks.class));
-        this.testTasks = new AtomicReference<>(getCustomModel(gradleConnection, BspTestTasks.class));
-        this.runTasks = new AtomicReference<>(getCustomModel(gradleConnection, BspRunTasks.class));
+        this.workspace = new AtomicReference<>(getCustomModel(gradleConnection, BspWorkspace.class));
+        logger.info("Retrieved workspace model {}", this.workspace.get());
     }
 
     private <T> T getCustomModel(ProjectConnection connection, Class<T> customModelClass) {
@@ -138,7 +117,7 @@ public class GradleBspServer implements BuildServer {
     }
 
     List<String> getLanguageIds(Predicate<? super BspBuildTarget> targetFilter) {
-        return workspaceModel.get().buildTargets().stream()
+        return workspace.get().buildTargets().stream()
                 .filter(targetFilter)
                 .flatMap(target -> target.languageIds().stream())
                 .distinct().collect(Collectors.toList());
@@ -234,7 +213,7 @@ public class GradleBspServer implements BuildServer {
     public CompletableFuture<WorkspaceBuildTargetsResult> workspaceBuildTargets() {
         return ifInitialized(cancelToken -> {
             cancelToken.checkCanceled();
-            var buildTargets = workspaceModel.get()
+            var buildTargets = workspace.get()
                     .buildTargets().stream()
                     .filter(this::hasClientSupportedLanguage)
                     .map(Conversions::toBspBuildTarget)
@@ -247,20 +226,11 @@ public class GradleBspServer implements BuildServer {
     public CompletableFuture<Object> workspaceReload() {
         return ifInitializedAsync(cancelToken -> {
             cancelToken.checkCanceled();
-            var workspaceFuture = getCustomModelFuture(this.gradleConnection.get(), BspWorkspace.class);
-            var compileTasksFuture = getCustomModelFuture(this.gradleConnection.get(), BspCompileTasks.class);
-            var testTasksFuture = getCustomModelFuture(this.gradleConnection.get(), BspTestTasks.class);
-            var runTasksFuture = getCustomModelFuture(this.gradleConnection.get(), BspRunTasks.class);
-            return CompletableFuture
-                    .allOf(workspaceFuture, compileTasksFuture, testTasksFuture, runTasksFuture)
-                    .thenApply(v -> {
-                        cancelToken.checkCanceled();
-                        this.workspaceModel.set(workspaceFuture.join());
-                        this.compileTasks.set(compileTasksFuture.join());
-                        this.testTasks.set(testTasksFuture.join());
-                        this.runTasks.set(runTasksFuture.join());
-                        return null;
-                    });
+            return getCustomModelFuture(this.gradleConnection.get(), BspWorkspace.class).thenApply(workspace -> {
+                cancelToken.checkCanceled();
+                this.workspace.set(workspace);
+                return null;
+            });
         });
     }
 
@@ -310,7 +280,7 @@ public class GradleBspServer implements BuildServer {
     }
 
     String[] getCompileTasksFrom(List<String> targetUris) {
-        var compileTaskMapping = compileTasks.get().getCompileTasks();
+        var compileTaskMapping = workspace.get().compileTasks().getCompileTasks();
 
         return targetUris.stream().flatMap(target -> {
             return Stream.ofNullable(compileTaskMapping.get(target));
@@ -347,7 +317,7 @@ public class GradleBspServer implements BuildServer {
     }
 
     String[] getTestTasksFrom(List<String> targetUris) {
-        var testTaskMapping = testTasks.get().getTestTasks();
+        var testTaskMapping = workspace.get().testTasks().getTestTasks();
 
         return targetUris.stream().flatMap(target -> {
             return Stream.ofNullable(testTaskMapping.get(target))
@@ -379,7 +349,7 @@ public class GradleBspServer implements BuildServer {
     }
 
     String[] getRunTaskFor(String targetUri) {
-        var runTaskMapping = runTasks.get().getRunTasks();
+        var runTaskMapping = workspace.get().runTasks().getRunTasks();
         return Stream.ofNullable(runTaskMapping.get(targetUri)).toArray(String[]::new);
     }
 
@@ -418,10 +388,40 @@ public class GradleBspServer implements BuildServer {
         throw new UnsupportedOperationException("Unimplemented method 'debugSessionStart'");
     }
 
+    List<String> getTargetUris(CleanCacheParams params) {
+        return params.getTargets().stream()
+                .map(BuildTargetIdentifier::getUri)
+                .collect(Collectors.toList());
+    }
+
+    String[] getCleanTasksFrom(List<String> targetUris) {
+        var cleanTaskMapping = workspace.get().cleanTasks().getCleanTasks();
+
+        return targetUris.stream().flatMap(target -> {
+            return Stream.ofNullable(cleanTaskMapping.get(target));
+        }).distinct().toArray(String[]::new);
+    }
+
     @Override
     public CompletableFuture<CleanCacheResult> buildTargetCleanCache(CleanCacheParams params) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildTargetCleanCache'");
+        return ifInitializedAsync(cancelToken -> {
+            var cleanResult = new CleanCacheResult(null, Boolean.TRUE);
+
+            var targetUris = getTargetUris(params);
+            var targetCleanTasks = getCleanTasksFrom(targetUris);
+
+            if (targetCleanTasks.length == 0) {
+                logger.error("No clean tasks could be found for build targets {}", String.join(", ", targetUris));
+                cleanResult.setCleaned(Boolean.FALSE);
+                return CompletableFuture.completedFuture(cleanResult);
+            }
+
+            logger.info("Running build tasks {}", String.join(", ", targetCleanTasks));
+
+            var build = configureBuildLauncher(cancelToken, null, ProjectConnection::newBuild);
+
+            return GradleResults.handleClean(cleanResult, build.forTasks(targetCleanTasks));
+        });
     }
 
     @Override

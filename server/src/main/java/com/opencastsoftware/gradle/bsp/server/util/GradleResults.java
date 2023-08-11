@@ -51,6 +51,16 @@ public class GradleResults {
         return new GradleRunResultHandler(runResult, resultFuture);
     }
 
+    public static CompletableFuture<CleanCacheResult> handleClean(CleanCacheResult cleanResult, BuildLauncher launcher) {
+        var resultFuture = new CompletableFuture<CleanCacheResult>();
+        launcher.run(cleanHandler(cleanResult, resultFuture));
+        return resultFuture;
+    }
+
+    public static ResultHandler<Void> cleanHandler(CleanCacheResult cleanResult, CompletableFuture<CleanCacheResult> resultFuture) {
+        return new GradleCleanResultHandler(cleanResult, resultFuture);
+    }
+
     private static class GradleResultHandler<T> implements ResultHandler<T> {
         private final CompletableFuture<T> resultFuture;
 
@@ -144,6 +154,28 @@ public class GradleResults {
                 runResult.setStatusCode(StatusCode.ERROR);
             }
             resultFuture.complete(runResult);
+        }
+    }
+
+    private static class GradleCleanResultHandler implements ResultHandler<Void> {
+        private final CleanCacheResult cleanResult;
+        private final CompletableFuture<CleanCacheResult> resultFuture;
+
+        GradleCleanResultHandler(CleanCacheResult cleanResult, CompletableFuture<CleanCacheResult> resultFuture) {
+            this.cleanResult = cleanResult;
+            this.resultFuture = resultFuture;
+        }
+
+        @Override
+        public void onComplete(Void result) {
+            cleanResult.setCleaned(Boolean.TRUE);
+            resultFuture.complete(cleanResult);
+        }
+
+        @Override
+        public void onFailure(GradleConnectionException failure) {
+            cleanResult.setCleaned(Boolean.FALSE);
+            resultFuture.complete(cleanResult);
         }
     }
 }

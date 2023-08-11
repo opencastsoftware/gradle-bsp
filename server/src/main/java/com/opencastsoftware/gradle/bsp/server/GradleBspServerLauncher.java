@@ -5,6 +5,7 @@
 package com.opencastsoftware.gradle.bsp.server;
 
 import ch.epfl.scala.bsp4j.BuildClient;
+import com.opencastsoftware.gradle.bsp.server.util.DaemonThreadFactory;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
@@ -25,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Command(name = "Gradle BSP Server", version = BuildInfo.version, mixinStandardHelpOptions = true)
@@ -53,8 +55,8 @@ public class GradleBspServerLauncher implements Callable<Integer> {
 
     public static void main(String[] args) throws IOException {
         var launcher = new GradleBspServerLauncher(createInitScript());
-        int exitCode = new CommandLine(launcher).execute(args);
-        System.exit(exitCode);
+        var commandLine = new CommandLine(launcher);
+        System.exit(commandLine.execute(args));
     }
 
     private static Path createInitScript() throws IOException {
@@ -68,7 +70,6 @@ public class GradleBspServerLauncher implements Callable<Integer> {
         }
         return initScriptPath;
     }
-
 
     private File findProjectRoot() {
         var currentDir = Paths.get(".")
@@ -94,12 +95,15 @@ public class GradleBspServerLauncher implements Callable<Integer> {
         try (ProjectConnection connection = connector.connect()) {
             var server = new GradleBspServer(connection, initScriptPath);
 
+            var threadFactory = DaemonThreadFactory.create(logger, "gradle-buildserver-listener-%d");
+            var executor = Executors.newSingleThreadExecutor(threadFactory);
+
             var launcher = new Launcher.Builder<BuildClient>()
                     .setLocalService(server)
                     .setRemoteInterface(BuildClient.class)
                     .setInput(in)
                     .setOutput(out)
-                    .setExecutorService(server.getExecutor())
+                    .setExecutorService(executor)
                     .traceMessages(new PrintWriter(System.err))
                     .validateMessages(true)
                     .create();
