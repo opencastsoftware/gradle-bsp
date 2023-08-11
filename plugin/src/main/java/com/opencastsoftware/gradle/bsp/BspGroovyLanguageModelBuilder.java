@@ -5,6 +5,7 @@
 package com.opencastsoftware.gradle.bsp;
 
 import org.gradle.api.Project;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.GroovySourceDirectorySet;
 import org.gradle.api.tasks.SourceSet;
 import org.jetbrains.annotations.Nullable;
@@ -20,16 +21,8 @@ public abstract class BspGroovyLanguageModelBuilder extends BspLanguageModelBuil
     }
 
     @Override
-    public boolean isEnabledFor(SourceSet sourceSet) {
-        return sourceSet.getExtensions().findByType(GroovySourceDirectorySet.class) != null;
-    }
-
-    @Nullable
-    @Override
-    protected String getDisplayNameFor(Project project, SourceSet sourceSet) {
-        return sourceSet.getExtensions()
-                .getByType(GroovySourceDirectorySet.class)
-                .getDisplayName();
+    protected SourceDirectorySet getSourceDirectorySetFor(SourceSet sourceSet) {
+        return sourceSet.getExtensions().findByType(GroovySourceDirectorySet.class);
     }
 
     @Nullable

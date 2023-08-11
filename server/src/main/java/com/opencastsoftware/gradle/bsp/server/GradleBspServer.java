@@ -234,10 +234,34 @@ public class GradleBspServer implements BuildServer {
         });
     }
 
+    List<String> getTargetUris(SourcesParams params) {
+        return params.getTargets().stream()
+                .map(BuildTargetIdentifier::getUri)
+                .collect(Collectors.toList());
+    }
+
+    List<SourcesItem> getSourcesFrom(List<String> targetUris) {
+        var sourceDirectoriesMapping = workspace.get().buildTargetSources().getSources();
+
+        return targetUris.stream().flatMap(target -> {
+            return Stream.ofNullable(sourceDirectoriesMapping.get(target))
+                    .map(srcDirs -> {
+                        var id = new BuildTargetIdentifier(target);
+                        var sourceItems = srcDirs.stream()
+                                .map(srcDir -> new SourceItem(srcDir.uri(), SourceItemKind.DIRECTORY, srcDir.generated()))
+                                .collect(Collectors.toList());
+                        return new SourcesItem(id, sourceItems);
+                    });
+        }).collect(Collectors.toList());
+    }
+
     @Override
     public CompletableFuture<SourcesResult> buildTargetSources(SourcesParams params) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildTargetSources'");
+        return ifInitialized(cancelToken -> {
+            var targetUris = getTargetUris(params);
+            var sourcesItems = getSourcesFrom(targetUris);
+            return new SourcesResult(sourcesItems);
+        });
     }
 
     @Override

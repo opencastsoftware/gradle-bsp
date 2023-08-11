@@ -68,4 +68,40 @@ public class BspModelTest {
         EqualsVerifier.forClass(DefaultBspCleanTasks.class).usingGetClass().verify();
         ToStringVerifier.forClass(DefaultBspCleanTasks.class).verify();
     }
+
+    @Test
+    void testBspSourceItem() {
+        EqualsVerifier.forClass(DefaultBspSourceItem.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspSourceItem.class).verify();
+    }
+
+    @Test
+    void testBspBuildTargetSources() {
+        EqualsVerifier.forClass(DefaultBspBuildTargetSources.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspBuildTargetSources.class).verify();
+    }
+
+    @Test
+    void testBspDependencyModule() {
+        EqualsVerifier.forClass(DefaultBspDependencyModule.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspDependencyModule.class).verify();
+    }
+
+    @Test
+    void testBspDependencyModules() {
+        EqualsVerifier.forClass(DefaultBspDependencyModules.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspDependencyModules.class).verify();
+    }
+
+    @Test
+    void testBspMavenDependencyModule() {
+        EqualsVerifier.forClass(DefaultBspMavenDependencyModule.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspMavenDependencyModule.class).verify();
+    }
+
+    @Test
+    void testBspMavenDependencyModuleArtifact() {
+        EqualsVerifier.forClass(DefaultBspMavenDependencyModuleArtifact.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspMavenDependencyModuleArtifact.class).verify();
+    }
 }

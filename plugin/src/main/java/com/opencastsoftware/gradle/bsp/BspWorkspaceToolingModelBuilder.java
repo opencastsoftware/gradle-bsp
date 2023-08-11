@@ -22,12 +22,16 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
     BspTestTasksToolingModelBuilder testTasksBuilder;
     BspRunTasksToolingModelBuilder runTasksBuilder;
     BspCleanTasksToolingModelBuilder cleanTasksBuilder;
+    BspBuildTargetSourcesToolingModelBuilder buildTargetSourcesBuilder;
+    BspDependencyModulesToolingModelBuilder buildTargetDependenciesBuilder;
 
     public BspWorkspaceToolingModelBuilder() {
        this.compileTasksBuilder = new BspCompileTasksToolingModelBuilder();
        this.testTasksBuilder = new BspTestTasksToolingModelBuilder();
        this.runTasksBuilder = new BspRunTasksToolingModelBuilder();
        this.cleanTasksBuilder = new BspCleanTasksToolingModelBuilder();
+       this.buildTargetSourcesBuilder = new BspBuildTargetSourcesToolingModelBuilder();
+       this.buildTargetDependenciesBuilder = new BspDependencyModulesToolingModelBuilder();
     }
 
     @Override
@@ -127,11 +131,15 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
         var testTasksName = BspTestTasks.class.getName();
         var runTasksName = BspRunTasks.class.getName();
         var cleanTasksName = BspCleanTasks.class.getName();
+        var buildTargetSourcesName = BspBuildTargetSources.class.getName();
+        var buildTargetDependenciesName = BspDependencyModules.class.getName();
 
         var compileTasks = compileTasksBuilder.buildAll(compileTasksName, rootProject);
         var testTasks = testTasksBuilder.buildAll(testTasksName, rootProject);
         var runTasks = runTasksBuilder.buildAll(runTasksName, rootProject);
         var cleanTasks = cleanTasksBuilder.buildAll(cleanTasksName, rootProject);
+        var buildTargetSources = buildTargetSourcesBuilder.buildAll(buildTargetSourcesName, rootProject);
+        var buildTargetDependencies = buildTargetDependenciesBuilder.buildAll(buildTargetDependenciesName, rootProject);
 
         var buildTargets = new ArrayList<BspBuildTarget>();
 
@@ -168,6 +176,6 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
             }
         });
 
-        return new DefaultBspWorkspace(buildTargets, compileTasks, testTasks, runTasks, cleanTasks);
+        return new DefaultBspWorkspace(buildTargets, compileTasks, testTasks, runTasks, cleanTasks, buildTargetSources, buildTargetDependencies);
     }
 }

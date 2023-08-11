@@ -7,6 +7,7 @@ package com.opencastsoftware.gradle.bsp;
 import com.opencastsoftware.gradle.bsp.model.BspScalaPlatform;
 import com.opencastsoftware.gradle.bsp.model.DefaultBspScalaBuildTarget;
 import org.gradle.api.Project;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.ScalaRuntime;
 import org.gradle.api.tasks.ScalaSourceDirectorySet;
 import org.gradle.api.tasks.SourceSet;
@@ -26,16 +27,8 @@ public abstract class BspScalaLanguageModelBuilder extends BspLanguageModelBuild
     }
 
     @Override
-    public boolean isEnabledFor(SourceSet sourceSet) {
-        return sourceSet.getExtensions().findByType(ScalaSourceDirectorySet.class) != null;
-    }
-
-    @Nullable
-    @Override
-    protected String getDisplayNameFor(Project project, SourceSet sourceSet) {
-        return sourceSet.getExtensions()
-                .getByType(ScalaSourceDirectorySet.class)
-                .getDisplayName();
+    protected SourceDirectorySet getSourceDirectorySetFor(SourceSet sourceSet) {
+        return sourceSet.getExtensions().findByType(ScalaSourceDirectorySet.class);
     }
 
     @Nullable

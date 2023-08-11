@@ -6,6 +6,7 @@ package com.opencastsoftware.gradle.bsp;
 
 import com.opencastsoftware.gradle.bsp.model.*;
 import org.gradle.api.Project;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.SourceSet;
 
 import javax.annotation.Nullable;
@@ -16,10 +17,16 @@ public abstract class BspLanguageModelBuilder extends BspModelBuilder {
 
     public abstract String getLanguageId();
 
-    public abstract boolean isEnabledFor(SourceSet sourceSet);
+    public boolean isEnabledFor(SourceSet sourceSet) {
+        return getSourceDirectorySetFor(sourceSet) != null;
+    }
 
     @Nullable
-    protected abstract String getDisplayNameFor(Project project, SourceSet sourceSet);
+    protected String getDisplayNameFor(Project project, SourceSet sourceSet) {
+        return getSourceDirectorySetFor(sourceSet).getDisplayName();
+    }
+
+    protected abstract SourceDirectorySet getSourceDirectorySetFor(SourceSet sourceSet);
 
     @Override
     protected BspBuildTargetId getBuildTargetIdFor(Project project, SourceSet sourceSet) {

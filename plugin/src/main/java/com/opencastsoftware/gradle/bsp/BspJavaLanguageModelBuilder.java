@@ -5,6 +5,7 @@
 package com.opencastsoftware.gradle.bsp;
 
 import org.gradle.api.Project;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.SourceSet;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,10 +23,9 @@ public abstract class BspJavaLanguageModelBuilder extends BspLanguageModelBuilde
         return true;
     }
 
-    @Nullable
     @Override
-    protected String getDisplayNameFor(Project project, SourceSet sourceSet) {
-        return sourceSet.getJava().getDisplayName();
+    protected SourceDirectorySet getSourceDirectorySetFor(SourceSet sourceSet) {
+        return sourceSet.getJava();
     }
 
     @Nullable
