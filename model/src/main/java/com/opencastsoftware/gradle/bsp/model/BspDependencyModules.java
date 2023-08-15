@@ -4,9 +4,10 @@
  */
 package com.opencastsoftware.gradle.bsp.model;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
-public interface BspDependencyModules {
+public interface BspDependencyModules extends Serializable {
     Map<String, Set<BspDependencyModule>> dependencyModules();
 }

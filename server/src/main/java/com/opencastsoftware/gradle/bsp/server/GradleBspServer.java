@@ -61,6 +61,8 @@ public class GradleBspServer implements BuildServer {
     private <T> T getCustomModel(ProjectConnection connection, Class<T> customModelClass) {
         return connection
                 .model(customModelClass)
+                .setStandardOutput(System.err)
+                .setStandardError(System.err)
                 .addArguments("--init-script", initScriptPath.toString())
                 .get();
     }
@@ -68,6 +70,8 @@ public class GradleBspServer implements BuildServer {
     private <T> CompletableFuture<T> getCustomModelFuture(ProjectConnection connection, Class<T> customModelClass) {
         var modelBuilder = connection
                 .model(customModelClass)
+                .setStandardOutput(System.err)
+                .setStandardError(System.err)
                 .addArguments("--init-script", initScriptPath.toString());
 
         return GradleResults.handle(modelBuilder::get);
@@ -293,6 +297,8 @@ public class GradleBspServer implements BuildServer {
         var operationTypes = Set.of(OperationType.BUILD_PHASE, OperationType.TASK);
         var progressListener = new BuildClientProgressListener(client, cancelToken, gradleCanceller, originId);
         return launcherFn.apply(gradleConnection.get())
+                .setStandardOutput(System.err)
+                .setStandardError(System.err)
                 .withCancellationToken(gradleCanceller.token())
                 .addProgressListener(progressListener, operationTypes);
     }
