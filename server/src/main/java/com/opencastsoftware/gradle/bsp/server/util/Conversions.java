@@ -43,7 +43,7 @@ public class Conversions {
         }
 
         if (buildTarget.baseDirectory() != null) {
-            bspTarget.setBaseDirectory(buildTarget.baseDirectory());
+            bspTarget.setBaseDirectory(buildTarget.baseDirectory().toString());
         }
 
         if (buildTarget.dataKind() != null && buildTarget.data() != null) {

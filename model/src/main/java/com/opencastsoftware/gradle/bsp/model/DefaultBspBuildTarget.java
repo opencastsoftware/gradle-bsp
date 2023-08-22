@@ -5,13 +5,14 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 
 public class DefaultBspBuildTarget implements BspBuildTarget {
     private final BspBuildTargetId id;
     private final String displayName;
-    private final String baseDirectory;
+    private final URI baseDirectory;
     private final List<String> tags;
     private final List<String> languageIds;
     private final List<BspBuildTargetId> dependencies;
@@ -19,7 +20,7 @@ public class DefaultBspBuildTarget implements BspBuildTarget {
     private final String dataKind;
     private final Serializable data;
 
-    public DefaultBspBuildTarget(BspBuildTargetId id, String displayName, String baseDirectory, List<String> tags, List<String> languageIds, List<BspBuildTargetId> dependencies, BspBuildTargetCapabilities capabilities) {
+    public DefaultBspBuildTarget(BspBuildTargetId id, String displayName, URI baseDirectory, List<String> tags, List<String> languageIds, List<BspBuildTargetId> dependencies, BspBuildTargetCapabilities capabilities) {
         this.id = id;
         this.displayName = displayName;
         this.baseDirectory = baseDirectory;
@@ -31,7 +32,7 @@ public class DefaultBspBuildTarget implements BspBuildTarget {
         this.data = null;
     }
 
-    public DefaultBspBuildTarget(BspBuildTargetId id, String displayName, String baseDirectory, List<String> tags, List<String> languageIds, List<BspBuildTargetId> dependencies, BspBuildTargetCapabilities capabilities, String dataKind, Serializable data) {
+    public DefaultBspBuildTarget(BspBuildTargetId id, String displayName, URI baseDirectory, List<String> tags, List<String> languageIds, List<BspBuildTargetId> dependencies, BspBuildTargetCapabilities capabilities, String dataKind, Serializable data) {
        this.id = id;
        this.displayName = displayName;
        this.baseDirectory = baseDirectory;
@@ -54,7 +55,7 @@ public class DefaultBspBuildTarget implements BspBuildTarget {
     }
 
     @Override
-    public String baseDirectory() {
+    public URI baseDirectory() {
         return this.baseDirectory;
     }
 
@@ -106,7 +107,7 @@ public class DefaultBspBuildTarget implements BspBuildTarget {
         return "DefaultBspBuildTarget[" +
                 "id=" + id +
                 ", displayName='" + displayName + '\'' +
-                ", baseDirectory='" + baseDirectory + '\'' +
+                ", baseDirectory=" + baseDirectory +
                 ", tags=" + tags +
                 ", languageIds=" + languageIds +
                 ", dependencies=" + dependencies +

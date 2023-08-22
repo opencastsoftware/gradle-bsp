@@ -4,18 +4,19 @@
  */
 package com.opencastsoftware.gradle.bsp.model;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 
 public class DefaultBspCompileTasks implements BspCompileTasks {
-    private final Map<String, String> compileTasks;
+    private final Map<URI, String> compileTasks;
 
-    public DefaultBspCompileTasks(Map<String, String> compileTasks) {
+    public DefaultBspCompileTasks(Map<URI, String> compileTasks) {
         this.compileTasks = compileTasks;
     }
 
     @Override
-    public Map<String, String> getCompileTasks() {
+    public Map<URI, String> getCompileTasks() {
         return compileTasks;
     }
 

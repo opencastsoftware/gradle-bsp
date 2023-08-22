@@ -5,9 +5,10 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
 public interface BspTestTasks extends Serializable {
-    Map<String, Set<String>> getTestTasks();
+    Map<URI, Set<String>> getTestTasks();
 }

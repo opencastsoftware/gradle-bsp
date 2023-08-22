@@ -11,6 +11,7 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Optional;
 
@@ -22,17 +23,17 @@ public class BspCompileTasksToolingModelBuilder extends BspModelBuilder implemen
 
     @Override
     public BspCompileTasks buildAll(String modelName, Project rootProject) {
-        var compileTasks = new HashMap<String, String>();
+        var compileTasks = new HashMap<URI, String>();
 
         rootProject.getAllprojects().forEach(project -> {
             var javaExtension = project.getExtensions().findByType(JavaPluginExtension.class);
             if (javaExtension != null) {
                 javaExtension.getSourceSets().forEach(sourceSet -> {
-                    var sourceSetTargetId = getBuildTargetIdFor(project, sourceSet).uri().toString();
+                    var sourceSetTargetId = getBuildTargetIdFor(project, sourceSet).uri();
                     var classesTask = project.getTasks().findByName(sourceSet.getClassesTaskName());
                     Optional.ofNullable(classesTask).ifPresent(task -> compileTasks.put(sourceSetTargetId, task.getPath()));
                 });
-                var projectTargetId = getBuildTargetIdFor(project).uri().toString();
+                var projectTargetId = getBuildTargetIdFor(project).uri();
                 var classesTask = project.getTasks().findByName(JavaPlugin.CLASSES_TASK_NAME);
                 Optional.ofNullable(classesTask).ifPresent(task -> compileTasks.put(projectTargetId, task.getPath()));
             }

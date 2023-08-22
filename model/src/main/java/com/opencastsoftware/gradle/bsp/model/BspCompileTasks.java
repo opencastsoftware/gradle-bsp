@@ -5,8 +5,9 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.Map;
 
 public interface BspCompileTasks extends Serializable {
-    Map<String, String> getCompileTasks();
+    Map<URI, String> getCompileTasks();
 }

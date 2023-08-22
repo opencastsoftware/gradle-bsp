@@ -6,12 +6,13 @@ package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.List;
 
 public interface BspScalaBuildTarget extends Serializable {
     String scalaOrganization();
     String scalaVersion();
     String scalaBinaryVersion();
     BspScalaPlatform scalaPlatform();
-    URI[] jars();
+    List<URI> jars();
     BspJvmBuildTarget jvmBuildTarget();
 }

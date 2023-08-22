@@ -5,8 +5,9 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.Map;
 
 public interface BspRunTasks extends Serializable {
-    Map<String, String> getRunTasks();
+    Map<URI, String> getRunTasks();
 }

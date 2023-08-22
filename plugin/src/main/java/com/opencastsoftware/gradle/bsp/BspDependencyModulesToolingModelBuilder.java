@@ -13,6 +13,7 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.internal.component.external.descriptor.MavenScope;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,7 +29,7 @@ public class BspDependencyModulesToolingModelBuilder extends BspModelBuilder imp
     Set<BspMavenDependencyModuleArtifact> getArtifactsOf(ResolvedDependency dependency) {
         return dependency.getModuleArtifacts().stream()
                 .map(artifact -> {
-                    var uri = artifact.getFile().toURI().toString();
+                    var uri = artifact.getFile().toURI();
                     var classifier = artifact.getClassifier();
                     return new DefaultBspMavenDependencyModuleArtifact(uri, classifier);
                 })
@@ -117,19 +118,19 @@ public class BspDependencyModulesToolingModelBuilder extends BspModelBuilder imp
 
     @Override
     public BspDependencyModules buildAll(String modelName, Project rootProject) {
-        var dependencyModules = new HashMap<String, Set<BspDependencyModule>>();
+        var dependencyModules = new HashMap<URI, Set<BspDependencyModule>>();
 
         rootProject.getAllprojects().forEach(project -> {
             var projectDependencies = new HashSet<BspDependencyModule>();
             var javaExtension = project.getExtensions().findByType(JavaPluginExtension.class);
             if (javaExtension != null) {
                 javaExtension.getSourceSets().forEach(sourceSet -> {
-                    var sourceSetTargetId = getBuildTargetIdFor(project, sourceSet).uri().toString();
+                    var sourceSetTargetId = getBuildTargetIdFor(project, sourceSet).uri();
                     var sourceSetDependencies = getDependenciesOf(project, sourceSet);
                     projectDependencies.addAll(sourceSetDependencies);
                     dependencyModules.put(sourceSetTargetId, sourceSetDependencies);
                 });
-                var projectTargetId = getBuildTargetIdFor(project).uri().toString();
+                var projectTargetId = getBuildTargetIdFor(project).uri();
                 dependencyModules.put(projectTargetId, projectDependencies);
             }
         });

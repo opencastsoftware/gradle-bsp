@@ -12,6 +12,7 @@ import org.gradle.language.base.internal.plugins.CleanRule;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Optional;
 
@@ -27,13 +28,13 @@ public class BspCleanTasksToolingModelBuilder extends BspModelBuilder implements
 
     @Override
     public BspCleanTasks buildAll(String modelName, Project rootProject) {
-        var cleanTasks = new HashMap<String, String>();
+        var cleanTasks = new HashMap<URI, String>();
 
         rootProject.getAllprojects().forEach(project -> {
             var javaExtension = project.getExtensions().findByType(JavaPluginExtension.class);
             if (javaExtension != null) {
                 javaExtension.getSourceSets().forEach(sourceSet -> {
-                    var sourceSetTargetId = getBuildTargetIdFor(project, sourceSet).uri().toString();
+                    var sourceSetTargetId = getBuildTargetIdFor(project, sourceSet).uri();
                     var classesTaskName = sourceSet.getClassesTaskName();
                     var classesTask = project.getTasks().findByName(classesTaskName);
                     Optional.ofNullable(classesTask).ifPresent(classes -> {
@@ -44,7 +45,7 @@ public class BspCleanTasksToolingModelBuilder extends BspModelBuilder implements
                         });
                     });
                 });
-                var projectTargetId = getBuildTargetIdFor(project).uri().toString();
+                var projectTargetId = getBuildTargetIdFor(project).uri();
                 var classesTask = project.getTasks().findByName(LifecycleBasePlugin.CLEAN_TASK_NAME);
                 Optional.ofNullable(classesTask).ifPresent(task -> cleanTasks.put(projectTargetId, task.getPath()));
             }

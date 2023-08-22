@@ -4,19 +4,20 @@
  */
 package com.opencastsoftware.gradle.bsp.model;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 public class DefaultBspTestTasks implements BspTestTasks {
-    private final Map<String, Set<String>> testTasks;
+    private final Map<URI, Set<String>> testTasks;
 
-    public DefaultBspTestTasks(Map<String, Set<String>> testTasks) {
+    public DefaultBspTestTasks(Map<URI, Set<String>> testTasks) {
         this.testTasks = testTasks;
     }
 
     @Override
-    public Map<String, Set<String>> getTestTasks() {
+    public Map<URI, Set<String>> getTestTasks() {
         return testTasks;
     }
 

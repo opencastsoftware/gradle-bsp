@@ -5,8 +5,9 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
+import java.net.URI;
 
 public interface BspMavenDependencyModuleArtifact extends Serializable {
-    String uri();
+    URI uri();
     String classifier();
 }

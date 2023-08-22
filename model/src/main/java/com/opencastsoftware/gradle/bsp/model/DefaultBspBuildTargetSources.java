@@ -4,19 +4,20 @@
  */
 package com.opencastsoftware.gradle.bsp.model;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 public class DefaultBspBuildTargetSources implements BspBuildTargetSources {
-    private final Map<String, Set<BspSourceItem>> sources;
+    private final Map<URI, Set<BspSourceItem>> sources;
 
-    public DefaultBspBuildTargetSources(Map<String, Set<BspSourceItem>> sources) {
+    public DefaultBspBuildTargetSources(Map<URI, Set<BspSourceItem>> sources) {
         this.sources = sources;
     }
 
     @Override
-    public Map<String, Set<BspSourceItem>> getSources() {
+    public Map<URI, Set<BspSourceItem>> getSources() {
         return sources;
     }
 

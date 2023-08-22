@@ -5,9 +5,10 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
 public interface BspBuildTargetResources extends Serializable {
-    Map<String, Set<String>> getResources();
+    Map<URI, Set<URI>> getResources();
 }

@@ -4,19 +4,20 @@
  */
 package com.opencastsoftware.gradle.bsp.model;
 
+import java.net.URI;
 import java.util.Objects;
 
 public class DefaultBspMavenDependencyModuleArtifact implements BspMavenDependencyModuleArtifact {
-    private final String uri;
+    private final URI uri;
     private final String classifier;
 
-    public DefaultBspMavenDependencyModuleArtifact(String uri, String classifier) {
+    public DefaultBspMavenDependencyModuleArtifact(URI uri, String classifier) {
         this.uri = uri;
         this.classifier = classifier;
     }
 
     @Override
-    public String uri() {
+    public URI uri() {
         return uri;
     }
 
@@ -41,7 +42,7 @@ public class DefaultBspMavenDependencyModuleArtifact implements BspMavenDependen
     @Override
     public String toString() {
         return "DefaultBspMavenDependencyModuleArtifact[" +
-                "uri='" + uri + '\'' +
+                "uri=" + uri +
                 ", classifier='" + classifier + '\'' +
                 ']';
     }

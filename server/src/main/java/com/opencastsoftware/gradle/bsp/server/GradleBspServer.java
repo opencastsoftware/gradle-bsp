@@ -242,21 +242,22 @@ public class GradleBspServer implements BuildServer {
         });
     }
 
-    List<String> getTargetUris(SourcesParams params) {
+    List<URI> getTargetUris(SourcesParams params) {
         return params.getTargets().stream()
                 .map(BuildTargetIdentifier::getUri)
+                .map(URI::create)
                 .collect(Collectors.toList());
     }
 
-    List<SourcesItem> getSourcesFrom(List<String> targetUris) {
+    List<SourcesItem> getSourcesFrom(List<URI> targetUris) {
         var sourceDirectoriesMapping = workspace.get().buildTargetSources().getSources();
 
         return targetUris.stream().flatMap(target -> {
             return Stream.ofNullable(sourceDirectoriesMapping.get(target))
                     .map(srcDirs -> {
-                        var id = new BuildTargetIdentifier(target);
+                        var id = new BuildTargetIdentifier(target.toString());
                         var sourceItems = srcDirs.stream()
-                                .map(srcDir -> new SourceItem(srcDir.uri(), SourceItemKind.DIRECTORY, srcDir.generated()))
+                                .map(srcDir -> new SourceItem(srcDir.uri().toString(), SourceItemKind.DIRECTORY, srcDir.generated()))
                                 .collect(Collectors.toList());
                         return new SourcesItem(id, sourceItems);
                     });
@@ -273,11 +274,11 @@ public class GradleBspServer implements BuildServer {
     }
 
     boolean sourceItemContains(BspSourceItem sourceItem, Path documentPath) {
-        var sourceItemPath = Paths.get(URI.create(sourceItem.uri()));
+        var sourceItemPath = Paths.get(sourceItem.uri());
         return documentPath.normalize().startsWith(sourceItemPath.normalize());
     }
 
-    boolean entryContains(Map.Entry<String, Set<BspSourceItem>> entry, Path documentPath)  {
+    boolean entryContains(Map.Entry<URI, Set<BspSourceItem>> entry, Path documentPath)  {
         return entry.getValue().stream()
                 .anyMatch(sourceItem -> sourceItemContains(sourceItem, documentPath));
     }
@@ -291,7 +292,7 @@ public class GradleBspServer implements BuildServer {
                     .buildTargetSources().getSources()
                     .entrySet().stream()
                     .filter(entry -> entryContains(entry, documentPath))
-                    .map(entry -> new BuildTargetIdentifier(entry.getKey()))
+                    .map(entry -> new BuildTargetIdentifier(entry.getKey().toString()))
                     .collect(Collectors.toList());
             return new InverseSourcesResult(buildTargets);
         });
@@ -304,19 +305,23 @@ public class GradleBspServer implements BuildServer {
     }
 
 
-    List<String> getTargetUris(ResourcesParams params) {
+    List<URI> getTargetUris(ResourcesParams params) {
         return params.getTargets().stream()
                 .map(BuildTargetIdentifier::getUri)
+                .map(URI::create)
                 .collect(Collectors.toList());
     }
 
-    List<ResourcesItem> getResourcesFrom(List<String> targetUris) {
+    List<ResourcesItem> getResourcesFrom(List<URI> targetUris) {
         var resourceDirectoriesMapping = workspace.get().buildTargetResources().getResources();
 
         return targetUris.stream().flatMap(target -> {
             return Stream.ofNullable(resourceDirectoriesMapping.get(target)).map(srcDirs -> {
-                var id = new BuildTargetIdentifier(target);
-                return new ResourcesItem(id, new ArrayList<>(srcDirs));
+                var id = new BuildTargetIdentifier(target.toString());
+                var resourceDirs = srcDirs.stream()
+                        .map(URI::toString)
+                        .collect(Collectors.toList());
+                return new ResourcesItem(id, resourceDirs);
             });
         }).collect(Collectors.toList());
     }
@@ -347,13 +352,14 @@ public class GradleBspServer implements BuildServer {
                 .addProgressListener(progressListener, operationTypes);
     }
 
-    List<String> getTargetUris(CompileParams params) {
+    List<URI> getTargetUris(CompileParams params) {
         return params.getTargets().stream()
                 .map(BuildTargetIdentifier::getUri)
+                .map(URI::create)
                 .collect(Collectors.toList());
     }
 
-    String[] getCompileTasksFrom(List<String> targetUris) {
+    String[] getCompileTasksFrom(List<URI> targetUris) {
         var compileTaskMapping = workspace.get().compileTasks().getCompileTasks();
 
         return targetUris.stream().flatMap(target -> {
@@ -371,7 +377,8 @@ public class GradleBspServer implements BuildServer {
             var targetCompileTasks = getCompileTasksFrom(targetUris);
 
             if (targetCompileTasks.length == 0) {
-                logger.error("No compile tasks could be found for build targets {}", String.join(", ", targetUris));
+                var targetUriStrings = targetUris.stream().map(URI::toString).collect(Collectors.joining(", "));
+                logger.error("No compile tasks could be found for build targets {}", targetUriStrings);
                 compileResult.setStatusCode(StatusCode.ERROR);
                 return CompletableFuture.completedFuture(compileResult);
             }
@@ -384,13 +391,14 @@ public class GradleBspServer implements BuildServer {
         });
     }
 
-    List<String> getTargetUris(TestParams params) {
+    List<URI> getTargetUris(TestParams params) {
         return params.getTargets().stream()
                 .map(BuildTargetIdentifier::getUri)
+                .map(URI::create)
                 .collect(Collectors.toList());
     }
 
-    String[] getTestTasksFrom(List<String> targetUris) {
+    String[] getTestTasksFrom(List<URI> targetUris) {
         var testTaskMapping = workspace.get().testTasks().getTestTasks();
 
         return targetUris.stream().flatMap(target -> {
@@ -409,7 +417,8 @@ public class GradleBspServer implements BuildServer {
             var targetTestTasks = getTestTasksFrom(targetUris);
 
             if (targetTestTasks.length == 0) {
-                logger.error("No test tasks could be found for build targets {}", String.join(", ", targetUris));
+                var targetUriStrings = targetUris.stream().map(URI::toString).collect(Collectors.joining(", "));
+                logger.error("No test tasks could be found for build targets {}", targetUriStrings);
                 testResult.setStatusCode(StatusCode.ERROR);
                 return CompletableFuture.completedFuture(testResult);
             }
@@ -422,7 +431,7 @@ public class GradleBspServer implements BuildServer {
         });
     }
 
-    String[] getRunTaskFor(String targetUri) {
+    String[] getRunTaskFor(URI targetUri) {
         var runTaskMapping = workspace.get().runTasks().getRunTasks();
         return Stream.ofNullable(runTaskMapping.get(targetUri)).toArray(String[]::new);
     }
@@ -433,7 +442,7 @@ public class GradleBspServer implements BuildServer {
             var runResult = new RunResult(StatusCode.OK);
             runResult.setOriginId(params.getOriginId());
 
-            var targetUri = params.getTarget().getUri().toString();
+            var targetUri = URI.create(params.getTarget().getUri());
             var targetRunTasks = getRunTaskFor(targetUri);
 
             if (targetRunTasks.length == 0) {
@@ -462,13 +471,14 @@ public class GradleBspServer implements BuildServer {
         throw new UnsupportedOperationException("Unimplemented method 'debugSessionStart'");
     }
 
-    List<String> getTargetUris(CleanCacheParams params) {
+    List<URI> getTargetUris(CleanCacheParams params) {
         return params.getTargets().stream()
                 .map(BuildTargetIdentifier::getUri)
+                .map(URI::create)
                 .collect(Collectors.toList());
     }
 
-    String[] getCleanTasksFrom(List<String> targetUris) {
+    String[] getCleanTasksFrom(List<URI> targetUris) {
         var cleanTaskMapping = workspace.get().cleanTasks().getCleanTasks();
 
         return targetUris.stream().flatMap(target -> {
@@ -485,7 +495,8 @@ public class GradleBspServer implements BuildServer {
             var targetCleanTasks = getCleanTasksFrom(targetUris);
 
             if (targetCleanTasks.length == 0) {
-                logger.error("No clean tasks could be found for build targets {}", String.join(", ", targetUris));
+                var targetUriStrings = targetUris.stream().map(URI::toString).collect(Collectors.joining(", "));
+                logger.error("No clean tasks could be found for build targets {}", targetUriStrings);
                 cleanResult.setCleaned(Boolean.FALSE);
                 return CompletableFuture.completedFuture(cleanResult);
             }

@@ -4,19 +4,20 @@
  */
 package com.opencastsoftware.gradle.bsp.model;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 public class DefaultBspDependencyModules implements BspDependencyModules {
-    private final Map<String, Set<BspDependencyModule>> dependencyModules;
+    private final Map<URI, Set<BspDependencyModule>> dependencyModules;
 
-    public DefaultBspDependencyModules(Map<String, Set<BspDependencyModule>> dependencyModules) {
+    public DefaultBspDependencyModules(Map<URI, Set<BspDependencyModule>> dependencyModules) {
         this.dependencyModules = dependencyModules;
     }
 
     @Override
-    public Map<String, Set<BspDependencyModule>> dependencyModules() {
+    public Map<URI, Set<BspDependencyModule>> dependencyModules() {
         return dependencyModules;
     }
 

@@ -4,19 +4,20 @@
  */
 package com.opencastsoftware.gradle.bsp.model;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 
 public class DefaultBspRunTasks implements BspRunTasks {
 
-    private final Map<String, String> runTasks;
+    private final Map<URI, String> runTasks;
 
-    public DefaultBspRunTasks(Map<String, String> runTasks) {
+    public DefaultBspRunTasks(Map<URI, String> runTasks) {
         this.runTasks = runTasks;
     }
 
     @Override
-    public Map<String, String> getRunTasks() {
+    public Map<URI, String> getRunTasks() {
         return runTasks;
     }
 

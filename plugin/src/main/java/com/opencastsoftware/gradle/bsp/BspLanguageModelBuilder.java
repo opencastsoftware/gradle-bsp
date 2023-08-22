@@ -31,7 +31,7 @@ public abstract class BspLanguageModelBuilder extends BspModelBuilder {
     @Override
     protected BspBuildTargetId getBuildTargetIdFor(Project project, SourceSet sourceSet) {
         var sourceSetName = sourceSet.getTaskName(null, getLanguageId());
-        var buildTargetUri = project.getProjectDir().toURI().resolve("?sourceSet=" + sourceSetName);
+        var buildTargetUri = project.getProjectDir().toPath().toUri().resolve("?sourceSet=" + sourceSetName);
         return new DefaultBspBuildTargetId(buildTargetUri);
     }
 

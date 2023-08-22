@@ -15,6 +15,7 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.testing.base.TestingExtension;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
@@ -34,7 +35,7 @@ public class BspTestTasksToolingModelBuilder extends BspModelBuilder implements 
 
     @Override
     public BspTestTasks buildAll(String modelName, Project rootProject) {
-        var testTasks = new HashMap<String, Set<String>>();
+        var testTasks = new HashMap<URI, Set<String>>();
 
         rootProject.getAllprojects().forEach(project -> {
             var javaExtension = project.getExtensions().findByType(JavaPluginExtension.class);
@@ -43,7 +44,7 @@ public class BspTestTasksToolingModelBuilder extends BspModelBuilder implements 
                 var jvmTestSuites = testingExtension.getSuites().withType(JvmTestSuite.class);
 
                 javaExtension.getSourceSets().forEach(sourceSet -> {
-                    var sourceSetTargetId = getBuildTargetIdFor(project, sourceSet).uri().toString();
+                    var sourceSetTargetId = getBuildTargetIdFor(project, sourceSet).uri();
                     var testSuite = testSuiteFor(jvmTestSuites, sourceSet);
 
                     testSuite.ifPresent(jvmTestSuite -> {
@@ -56,7 +57,7 @@ public class BspTestTasksToolingModelBuilder extends BspModelBuilder implements 
                     });
                 });
 
-                var projectTargetId = getBuildTargetIdFor(project).uri().toString();
+                var projectTargetId = getBuildTargetIdFor(project).uri();
                 var checkTask = project.getTasks().findByName(LifecycleBasePlugin.CHECK_TASK_NAME);
                 Optional.ofNullable(checkTask).ifPresent(task -> testTasks.put(projectTargetId, Set.of(task.getPath())));
             }

@@ -5,12 +5,13 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.List;
 
 public interface BspBuildTarget extends Serializable {
     BspBuildTargetId id();
     String displayName();
-    String baseDirectory();
+    URI baseDirectory();
     List<String> tags();
     List<String> languageIds();
     List<BspBuildTargetId> dependencies();

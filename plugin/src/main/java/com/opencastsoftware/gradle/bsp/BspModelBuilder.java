@@ -15,6 +15,7 @@ import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.testing.base.TestingExtension;
 
 import javax.annotation.Nullable;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,8 +38,8 @@ public abstract class BspModelBuilder {
         return new DefaultBspBuildTargetId(buildTargetUri);
     }
 
-    protected String getBaseDirectoryFor(Project project) {
-        return project.getProjectDir().toURI().toString();
+    protected URI getBaseDirectoryFor(Project project) {
+        return project.getProjectDir().toURI();
     }
 
     protected List<String> getBuildTargetTagsFor(Project project) {

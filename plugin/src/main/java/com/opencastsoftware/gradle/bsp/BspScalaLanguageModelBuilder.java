@@ -16,7 +16,7 @@ import org.gradle.util.internal.VersionNumber;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
-import java.net.URI;
+import java.util.List;
 
 public abstract class BspScalaLanguageModelBuilder extends BspLanguageModelBuilder {
     private static final String SCALA_LANGUAGE_ID = "scala";
@@ -76,7 +76,7 @@ public abstract class BspScalaLanguageModelBuilder extends BspLanguageModelBuild
                 scalaVersion,
                 scalaBinaryVersion,
                 BspScalaPlatform.JVM,
-                new URI[]{},
+                List.of(),
                 getJvmBuildTargetFor(project)
         );
     }

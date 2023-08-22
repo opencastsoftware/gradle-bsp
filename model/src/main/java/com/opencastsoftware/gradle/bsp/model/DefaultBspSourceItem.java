@@ -4,18 +4,25 @@
  */
 package com.opencastsoftware.gradle.bsp.model;
 
+import java.net.URI;
 import java.util.Objects;
 
 public class DefaultBspSourceItem implements BspSourceItem {
-    private final String uri;
+    private final URI uri;
     private final Boolean generated;
-    public DefaultBspSourceItem(String uri, Boolean generated) {
+
+    public DefaultBspSourceItem(URI uri) {
+        this.uri = uri;
+        this.generated = Boolean.FALSE;
+    }
+
+    public DefaultBspSourceItem(URI uri, Boolean generated) {
         this.uri = uri;
         this.generated = generated;
     }
 
     @Override
-    public String uri() {
+    public URI uri() {
         return uri;
     }
 
@@ -40,7 +47,7 @@ public class DefaultBspSourceItem implements BspSourceItem {
     @Override
     public String toString() {
         return "DefaultBspSourceItem[" +
-                "uri='" + uri + '\'' +
+                "uri=" + uri +
                 ", generated=" + generated +
                 ']';
     }

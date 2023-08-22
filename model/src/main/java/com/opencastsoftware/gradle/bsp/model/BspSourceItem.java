@@ -5,8 +5,9 @@
 package com.opencastsoftware.gradle.bsp.model;
 
 import java.io.Serializable;
+import java.net.URI;
 
 public interface BspSourceItem extends Serializable {
-    String uri();
+    URI uri();
     Boolean generated();
 }

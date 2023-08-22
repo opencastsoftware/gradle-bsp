@@ -4,18 +4,19 @@
  */
 package com.opencastsoftware.gradle.bsp.model;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 
 public class DefaultBspCleanTasks implements BspCleanTasks {
-    private final Map<String, String> cleanTasks;
+    private final Map<URI, String> cleanTasks;
 
-    public DefaultBspCleanTasks(Map<String, String> cleanTasks) {
+    public DefaultBspCleanTasks(Map<URI, String> cleanTasks) {
         this.cleanTasks = cleanTasks;
     }
 
     @Override
-    public Map<String, String> getCleanTasks() {
+    public Map<URI, String> getCleanTasks() {
         return cleanTasks;
     }
 
