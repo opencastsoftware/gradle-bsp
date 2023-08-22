@@ -23,6 +23,7 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
     BspRunTasksToolingModelBuilder runTasksBuilder;
     BspCleanTasksToolingModelBuilder cleanTasksBuilder;
     BspBuildTargetSourcesToolingModelBuilder buildTargetSourcesBuilder;
+    BspBuildTargetResourcesToolingModelBuilder buildTargetResourcesBuilder;
     BspDependencyModulesToolingModelBuilder buildTargetDependenciesBuilder;
 
     public BspWorkspaceToolingModelBuilder() {
@@ -31,6 +32,7 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
        this.runTasksBuilder = new BspRunTasksToolingModelBuilder();
        this.cleanTasksBuilder = new BspCleanTasksToolingModelBuilder();
        this.buildTargetSourcesBuilder = new BspBuildTargetSourcesToolingModelBuilder();
+       this.buildTargetResourcesBuilder = new BspBuildTargetResourcesToolingModelBuilder();
        this.buildTargetDependenciesBuilder = new BspDependencyModulesToolingModelBuilder();
     }
 
@@ -132,6 +134,7 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
         var runTasksName = BspRunTasks.class.getName();
         var cleanTasksName = BspCleanTasks.class.getName();
         var buildTargetSourcesName = BspBuildTargetSources.class.getName();
+        var buildTargetResourcesName = BspBuildTargetResources.class.getName();
         var buildTargetDependenciesName = BspDependencyModules.class.getName();
 
         var compileTasks = compileTasksBuilder.buildAll(compileTasksName, rootProject);
@@ -139,6 +142,7 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
         var runTasks = runTasksBuilder.buildAll(runTasksName, rootProject);
         var cleanTasks = cleanTasksBuilder.buildAll(cleanTasksName, rootProject);
         var buildTargetSources = buildTargetSourcesBuilder.buildAll(buildTargetSourcesName, rootProject);
+        var buildTargetResources = buildTargetResourcesBuilder.buildAll(buildTargetResourcesName, rootProject);
         var buildTargetDependencies = buildTargetDependenciesBuilder.buildAll(buildTargetDependenciesName, rootProject);
 
         var buildTargets = new ArrayList<BspBuildTarget>();
@@ -176,6 +180,6 @@ public class BspWorkspaceToolingModelBuilder extends BspModelBuilder implements 
             }
         });
 
-        return new DefaultBspWorkspace(buildTargets, compileTasks, testTasks, runTasks, cleanTasks, buildTargetSources, buildTargetDependencies);
+        return new DefaultBspWorkspace(buildTargets, compileTasks, testTasks, runTasks, cleanTasks, buildTargetSources, buildTargetResources, buildTargetDependencies);
     }
 }

@@ -14,5 +14,6 @@ public interface BspWorkspace extends Serializable {
     BspRunTasks runTasks();
     BspCleanTasks cleanTasks();
     BspBuildTargetSources buildTargetSources();
+    BspBuildTargetResources buildTargetResources();
     BspDependencyModules buildTargetDependencies();
 }

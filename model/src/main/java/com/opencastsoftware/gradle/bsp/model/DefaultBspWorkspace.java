@@ -14,15 +14,17 @@ public class DefaultBspWorkspace implements BspWorkspace {
     private final BspRunTasks runTasks;
     private final BspCleanTasks cleanTasks;
     private final BspBuildTargetSources buildTargetSources;
+    private final BspBuildTargetResources buildTargetResources;
     private final BspDependencyModules buildTargetDependencies;
 
-    public DefaultBspWorkspace(List<BspBuildTarget> buildTargets, BspCompileTasks compileTasks, BspTestTasks testTasks, BspRunTasks runTasks, BspCleanTasks cleanTasks, BspBuildTargetSources buildTargetSources, BspDependencyModules buildTargetDependencies) {
+    public DefaultBspWorkspace(List<BspBuildTarget> buildTargets, BspCompileTasks compileTasks, BspTestTasks testTasks, BspRunTasks runTasks, BspCleanTasks cleanTasks, BspBuildTargetSources buildTargetSources, BspBuildTargetResources buildTargetResources, BspDependencyModules buildTargetDependencies) {
         this.buildTargets = buildTargets;
         this.compileTasks = compileTasks;
         this.testTasks = testTasks;
         this.runTasks = runTasks;
         this.cleanTasks = cleanTasks;
         this.buildTargetSources = buildTargetSources;
+        this.buildTargetResources = buildTargetResources;
         this.buildTargetDependencies = buildTargetDependencies;
     }
 
@@ -58,6 +60,11 @@ public class DefaultBspWorkspace implements BspWorkspace {
     }
 
     @Override
+    public BspBuildTargetResources buildTargetResources() {
+        return buildTargetResources;
+    }
+
+    @Override
     public BspDependencyModules buildTargetDependencies() {
         return buildTargetDependencies;
     }
@@ -67,12 +74,12 @@ public class DefaultBspWorkspace implements BspWorkspace {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DefaultBspWorkspace that = (DefaultBspWorkspace) o;
-        return Objects.equals(buildTargets, that.buildTargets) && Objects.equals(compileTasks, that.compileTasks) && Objects.equals(testTasks, that.testTasks) && Objects.equals(runTasks, that.runTasks) && Objects.equals(cleanTasks, that.cleanTasks) && Objects.equals(buildTargetSources, that.buildTargetSources) && Objects.equals(buildTargetDependencies, that.buildTargetDependencies);
+        return Objects.equals(buildTargets, that.buildTargets) && Objects.equals(compileTasks, that.compileTasks) && Objects.equals(testTasks, that.testTasks) && Objects.equals(runTasks, that.runTasks) && Objects.equals(cleanTasks, that.cleanTasks) && Objects.equals(buildTargetSources, that.buildTargetSources) && Objects.equals(buildTargetResources, that.buildTargetResources) && Objects.equals(buildTargetDependencies, that.buildTargetDependencies);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(buildTargets, compileTasks, testTasks, runTasks, cleanTasks, buildTargetSources, buildTargetDependencies);
+        return Objects.hash(buildTargets, compileTasks, testTasks, runTasks, cleanTasks, buildTargetSources, buildTargetResources, buildTargetDependencies);
     }
 
     @Override
@@ -84,6 +91,7 @@ public class DefaultBspWorkspace implements BspWorkspace {
                 ", runTasks=" + runTasks +
                 ", cleanTasks=" + cleanTasks +
                 ", buildTargetSources=" + buildTargetSources +
+                ", buildTargetResources=" + buildTargetResources +
                 ", buildTargetDependencies=" + buildTargetDependencies +
                 ']';
     }

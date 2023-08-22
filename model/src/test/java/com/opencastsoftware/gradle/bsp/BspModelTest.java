@@ -82,6 +82,12 @@ public class BspModelTest {
     }
 
     @Test
+    void testBspBuildTargetResources() {
+        EqualsVerifier.forClass(DefaultBspBuildTargetResources.class).usingGetClass().verify();
+        ToStringVerifier.forClass(DefaultBspBuildTargetResources.class).verify();
+    }
+
+    @Test
     void testBspDependencyModule() {
         EqualsVerifier.forClass(DefaultBspDependencyModule.class).usingGetClass().verify();
         ToStringVerifier.forClass(DefaultBspDependencyModule.class).verify();

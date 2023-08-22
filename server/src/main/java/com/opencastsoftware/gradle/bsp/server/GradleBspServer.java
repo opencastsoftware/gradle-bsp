@@ -22,10 +22,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ExitCode;
 
+import java.net.URI;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -153,6 +153,10 @@ public class GradleBspServer implements BuildServer {
             serverCapabilities.setRunProvider(runCapabilities);
         }
 
+        serverCapabilities.setResourcesProvider(Boolean.TRUE);
+        serverCapabilities.setInverseSourcesProvider(Boolean.TRUE);
+        serverCapabilities.setDependencyModulesProvider(Boolean.TRUE);
+
         return serverCapabilities;
     }
 
@@ -268,10 +272,29 @@ public class GradleBspServer implements BuildServer {
         });
     }
 
+    boolean sourceItemContains(BspSourceItem sourceItem, Path documentPath) {
+        var sourceItemPath = Paths.get(URI.create(sourceItem.uri()));
+        return documentPath.normalize().startsWith(sourceItemPath.normalize());
+    }
+
+    boolean entryContains(Map.Entry<String, Set<BspSourceItem>> entry, Path documentPath)  {
+        return entry.getValue().stream()
+                .anyMatch(sourceItem -> sourceItemContains(sourceItem, documentPath));
+    }
+
     @Override
     public CompletableFuture<InverseSourcesResult> buildTargetInverseSources(InverseSourcesParams params) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildTargetInverseSources'");
+        return ifInitialized(cancelToken -> {
+            var documentUri = params.getTextDocument().getUri();
+            var documentPath = Paths.get(URI.create(documentUri));
+            var buildTargets = workspace.get()
+                    .buildTargetSources().getSources()
+                    .entrySet().stream()
+                    .filter(entry -> entryContains(entry, documentPath))
+                    .map(entry -> new BuildTargetIdentifier(entry.getKey()))
+                    .collect(Collectors.toList());
+            return new InverseSourcesResult(buildTargets);
+        });
     }
 
     @Override
@@ -280,10 +303,31 @@ public class GradleBspServer implements BuildServer {
         throw new UnsupportedOperationException("Unimplemented method 'buildTargetDependencySources'");
     }
 
+
+    List<String> getTargetUris(ResourcesParams params) {
+        return params.getTargets().stream()
+                .map(BuildTargetIdentifier::getUri)
+                .collect(Collectors.toList());
+    }
+
+    List<ResourcesItem> getResourcesFrom(List<String> targetUris) {
+        var resourceDirectoriesMapping = workspace.get().buildTargetResources().getResources();
+
+        return targetUris.stream().flatMap(target -> {
+            return Stream.ofNullable(resourceDirectoriesMapping.get(target)).map(srcDirs -> {
+                var id = new BuildTargetIdentifier(target);
+                return new ResourcesItem(id, new ArrayList<>(srcDirs));
+            });
+        }).collect(Collectors.toList());
+    }
+
     @Override
     public CompletableFuture<ResourcesResult> buildTargetResources(ResourcesParams params) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'buildTargetResources'");
+        return ifInitialized(cancelToken -> {
+            var targetUris = getTargetUris(params);
+            var resourcesItems = getResourcesFrom(targetUris);
+            return new ResourcesResult(resourcesItems);
+        });
     }
 
     @Override
