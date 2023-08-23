@@ -280,4 +280,144 @@ public class ToolingModelTest {
                 ))
         ));
     }
+
+    @Test
+    void returnsGroovySourcesWithGroovyPlugin(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('groovy')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}");
+
+        var buildTargetSources = fetchModel(projectDir, BspBuildTargetSources.class);
+
+        assertThat(buildTargetSources.getSources(), allOf(
+                hasEntry(equalTo(getBuildTargetId(projectDir, "main")), containsInAnyOrder(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "java"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "groovy"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "resources"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        )
+                )),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "test")), containsInAnyOrder(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "test", "java"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "test", "groovy"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "test", "resources"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        )
+                )),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "groovy")), contains(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "groovy"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        )
+                )),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "testGroovy")), contains(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "test", "groovy"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        )
+                ))
+        ));
+    }
+
+    @Test
+    void returnsAntlrSourcesWithAntlrPlugin(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('antlr')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}");
+
+        var buildTargetSources = fetchModel(projectDir, BspBuildTargetSources.class);
+
+        assertThat(buildTargetSources.getSources(), allOf(
+                hasEntry(equalTo(getBuildTargetId(projectDir, "main")), containsInAnyOrder(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "java"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "antlr"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "resources"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "build", "generated-src", "antlr", "main"))),
+                                hasProperty("generated", BspSourceItem::generated, is(true))
+                        )
+                )),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "test")), containsInAnyOrder(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "test", "java"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "test", "antlr"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "test", "resources"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "build", "generated-src", "antlr", "test"))),
+                                hasProperty("generated", BspSourceItem::generated, is(true))
+                        )
+                )),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "java")), containsInAnyOrder(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "java"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "build", "generated-src", "antlr", "main"))),
+                                hasProperty("generated", BspSourceItem::generated, is(true))
+                        )
+                )),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "testJava")), containsInAnyOrder(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "test", "java"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        ),
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "build", "generated-src", "antlr", "test"))),
+                                hasProperty("generated", BspSourceItem::generated, is(true))
+                        )
+                )),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "antlr")), contains(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "antlr"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        )
+                )),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "testAntlr")), contains(
+                        allOf(
+                                hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "test", "antlr"))),
+                                hasProperty("generated", BspSourceItem::generated, is(false))
+                        )
+                ))
+        ));
+    }
 }
