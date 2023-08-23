@@ -40,6 +40,10 @@ public class BspPlugin implements Plugin<Project> {
             builderRegistry.register(new BspCompileTasksToolingModelBuilder());
             builderRegistry.register(new BspTestTasksToolingModelBuilder());
             builderRegistry.register(new BspRunTasksToolingModelBuilder());
+            builderRegistry.register(new BspCleanTasksToolingModelBuilder());
+            builderRegistry.register(new BspBuildTargetSourcesToolingModelBuilder());
+            builderRegistry.register(new BspBuildTargetResourcesToolingModelBuilder());
+            builderRegistry.register(new BspDependencyModulesToolingModelBuilder());
             Configuration bspConfig = createBspConfigConfiguration(project);
             Configuration bspServer = createBspServerConfiguration(project);
             registerBspConfigTask(project, bspExtension, bspConfig, bspServer);

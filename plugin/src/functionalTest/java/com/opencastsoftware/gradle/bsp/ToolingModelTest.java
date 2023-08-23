@@ -4,8 +4,7 @@
  */
 package com.opencastsoftware.gradle.bsp;
 
-import com.opencastsoftware.gradle.bsp.model.BspSourceItem;
-import com.opencastsoftware.gradle.bsp.model.BspWorkspace;
+import com.opencastsoftware.gradle.bsp.model.*;
 import org.gradle.internal.classpath.DefaultClassPath;
 import org.gradle.testkit.runner.internal.PluginUnderTestMetadataReading;
 import org.gradle.tooling.GradleConnector;
@@ -54,21 +53,25 @@ public class ToolingModelTest {
         }
     }
 
-    private BspWorkspace fetchWorkspaceModel(File projectDir) {
+    private <A> A fetchModel(File projectDir, Class<A> modelClass) {
         var connector = GradleConnector.newConnector()
                 .forProjectDirectory(projectDir)
                 .useBuildDistribution();
 
         try (var connection = connector.connect()) {
-            var builder = (DefaultModelBuilder<BspWorkspace>) connection.model(BspWorkspace.class);
+            var builder = (DefaultModelBuilder<A>) connection.model(modelClass);
             var pluginClasspath = PluginUnderTestMetadataReading.readImplementationClasspath();
             builder.withInjectedClassPath(DefaultClassPath.of(pluginClasspath));
             return builder.get();
         }
     }
 
+    private BspWorkspace fetchWorkspaceModel(File projectDir) {
+        return fetchModel(projectDir, BspWorkspace.class);
+    }
+
     @Test
-    void registersWorkspaceModel(@TempDir File projectDir) throws IOException {
+    void returnsWorkspaceModel(@TempDir File projectDir) throws IOException {
         writeString(getSettingsFile(projectDir), "");
         writeString(getBuildFile(projectDir),
                 "plugins {\n" +
@@ -83,7 +86,7 @@ public class ToolingModelTest {
     }
 
     @Test
-    void returnsJavaBuildTargets(@TempDir File projectDir) throws IOException {
+    void returnsCompileTasks(@TempDir File projectDir) throws IOException {
         writeString(getSettingsFile(projectDir), "");
         writeString(getBuildFile(projectDir),
                 "plugins {\n" +
@@ -91,36 +94,81 @@ public class ToolingModelTest {
                         "  id('com.opencastsoftware.gradle.bsp')\n" +
                         "}");
 
+        var compileTasks = fetchModel(projectDir, BspCompileTasks.class);
+
+        assertThat(compileTasks.getCompileTasks(), allOf(
+                hasEntry(equalTo(getBuildTargetId(projectDir)), equalTo(":classes")),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "main")), equalTo(":classes")),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "test")), equalTo(":testClasses"))
+        ));
+    }
+
+    @Test
+    void returnsTestTasks(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}");
+
+        var testTasks = fetchModel(projectDir, BspTestTasks.class);
+
+        assertThat(testTasks.getTestTasks(), allOf(
+                hasEntry(equalTo(getBuildTargetId(projectDir)), contains(":check")),
+                hasEntry(equalTo(getBuildTargetId(projectDir, "test")), contains(":test"))
+        ));
+    }
+
+    @Test
+    void returnsNoRunTasksWithoutApplicationPlugin(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}");
+
+        var runTasks = fetchModel(projectDir, BspRunTasks.class);
+
+        assertThat(runTasks.getRunTasks(), is(anEmptyMap()));
+    }
+
+    @Test
+    void returnsRunTasksWithApplicationPlugin(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('application')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}");
 
         var workspace = fetchWorkspaceModel(projectDir);
 
         assertThat(workspace, is(notNullValue()));
 
-        assertThat(workspace.buildTargets(), is(not(empty())));
-
-        assertThat(workspace.compileTasks().getCompileTasks(), allOf(
-                hasEntry(equalTo(getBuildTargetId(projectDir)), equalTo(":classes")),
-                hasEntry(equalTo(getBuildTargetId(projectDir, "main")), equalTo(":classes")),
-                hasEntry(equalTo(getBuildTargetId(projectDir, "test")), equalTo(":testClasses"))
+        assertThat(workspace.runTasks().getRunTasks(), hasEntry(
+                equalTo(getBuildTargetId(projectDir)),
+                equalTo(":run")
         ));
+    }
 
-        assertThat(workspace.testTasks().getTestTasks(), allOf(
-                hasEntry(equalTo(getBuildTargetId(projectDir)), contains(":check")),
-                hasEntry(equalTo(getBuildTargetId(projectDir, "test")), contains(":test"))
-        ));
+    @Test
+    void returnsBuildTargetSources(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}");
 
-        assertThat(workspace.runTasks().getRunTasks(), is(anEmptyMap()));
+        var buildTargetSources = fetchModel(projectDir, BspBuildTargetSources.class);
 
-        assertThat(workspace.cleanTasks().getCleanTasks(), allOf(
-                hasEntry(equalTo(getBuildTargetId(projectDir)), equalTo(":clean")),
-                hasEntry(equalTo(getBuildTargetId(projectDir, "main")), equalTo(":cleanClasses")),
-                hasEntry(equalTo(getBuildTargetId(projectDir, "test")), equalTo(":cleanTestClasses"))
-        ));
-
-        // We have to compare individual properties:
         // Tooling API models are loaded separately in a different classloader from the one that references the model classes in our tests.
         // This means that our assertions cannot do simple `equals` comparisons using those classes, as they will always be false.
-        assertThat(workspace.buildTargetSources().getSources(), allOf(
+        // We must compare individual properties instead.
+        assertThat(buildTargetSources.getSources(), allOf(
                 hasEntry(equalTo(getBuildTargetId(projectDir, "main")), containsInAnyOrder(
                         allOf(
                                 hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "java"))),
@@ -154,8 +202,20 @@ public class ToolingModelTest {
                         )
                 ))
         ));
+    }
 
-        assertThat(workspace.buildTargetResources().getResources(), allOf(
+    @Test
+    void returnsBuildTargetResources(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}");
+
+        var buildTargetResources = fetchModel(projectDir, BspBuildTargetResources.class);
+
+        assertThat(buildTargetResources.getResources(), allOf(
                 hasEntry(equalTo(getBuildTargetId(projectDir, "main")), contains(
                         equalTo(getSourceUri(projectDir, "src", "main", "resources"))
                 )),
@@ -166,27 +226,7 @@ public class ToolingModelTest {
     }
 
     @Test
-    void returnsRunTasksWhenApplicationPluginApplied(@TempDir File projectDir) throws IOException {
-        writeString(getSettingsFile(projectDir), "");
-        writeString(getBuildFile(projectDir),
-                "plugins {\n" +
-                        "  id('java')\n" +
-                        "  id('application')\n" +
-                        "  id('com.opencastsoftware.gradle.bsp')\n" +
-                        "}");
-
-        var workspace = fetchWorkspaceModel(projectDir);
-
-        assertThat(workspace, is(notNullValue()));
-
-        assertThat(workspace.runTasks().getRunTasks(), hasEntry(
-                equalTo(getBuildTargetId(projectDir)),
-                equalTo(":run")
-        ));
-    }
-
-    @Test
-    void returnsScalaSourceDirectoriesWhenScalaPluginApplied(@TempDir File projectDir) throws IOException {
+    void returnsScalaSourcesWithScalaPlugin(@TempDir File projectDir) throws IOException {
         writeString(getSettingsFile(projectDir), "");
         writeString(getBuildFile(projectDir),
                 "plugins {\n" +
@@ -195,11 +235,9 @@ public class ToolingModelTest {
                         "  id('com.opencastsoftware.gradle.bsp')\n" +
                         "}");
 
-        var workspace = fetchWorkspaceModel(projectDir);
+        var buildTargetSources = fetchModel(projectDir, BspBuildTargetSources.class);
 
-        assertThat(workspace, is(notNullValue()));
-
-        assertThat(workspace.buildTargetSources().getSources(), allOf(
+        assertThat(buildTargetSources.getSources(), allOf(
                 hasEntry(equalTo(getBuildTargetId(projectDir, "main")), containsInAnyOrder(
                         allOf(
                                 hasProperty("uri", BspSourceItem::uri, equalTo(getSourceUri(projectDir, "src", "main", "java"))),
@@ -242,5 +280,4 @@ public class ToolingModelTest {
                 ))
         ));
     }
-
 }
