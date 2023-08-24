@@ -86,6 +86,109 @@ public class ToolingModelTest {
     }
 
     @Test
+    void returnsJavaBuildTargets(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}");
+
+        var workspace = fetchModel(projectDir, BspWorkspace.class);
+
+        assertThat(workspace.buildTargets(), hasItems(
+                // project build target
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir)))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(true)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(true)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                // source set build targets
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "main")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(true)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "test")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, contains("test")),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(true)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(true)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                // language-specific build targets
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "java")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "testJava")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, contains("test")),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                )
+        ));
+    }
+
+    @Test
     void returnsCompileTasks(@TempDir File projectDir) throws IOException {
         writeString(getSettingsFile(projectDir), "");
         writeString(getBuildFile(projectDir),
@@ -222,6 +325,288 @@ public class ToolingModelTest {
                 hasEntry(equalTo(getBuildTargetId(projectDir, "test")), contains(
                         equalTo(getSourceUri(projectDir, "src", "test", "resources"))
                 ))
+        ));
+    }
+
+    @Test
+    void returnsScalaBuildTargetsWithScalaPlugin(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('scala')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}");
+
+        var workspace = fetchModel(projectDir, BspWorkspace.class);
+
+        assertThat(workspace.buildTargets(), hasItems(
+                // project build target
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir)))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java", "scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(true)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(true)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                // source set build targets
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "main")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java", "scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(true)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "test")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, contains("test")),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java", "scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(true)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(true)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                // language-specific build targets
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "java")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "testJava")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, contains("test")),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "scala")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is(nullValue())),
+                        hasProperty("data", BspBuildTarget::data, is(nullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "testScala")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, contains("test")),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is(nullValue())),
+                        hasProperty("data", BspBuildTarget::data, is(nullValue()))
+                )
+        ));
+    }
+
+    @Test
+    void returnsScalaBuildTargetDataWhenScalaVersionIsAvailable(@TempDir File projectDir) throws IOException {
+        writeString(getSettingsFile(projectDir), "");
+        writeString(getBuildFile(projectDir),
+                "plugins {\n" +
+                        "  id('java')\n" +
+                        "  id('scala')\n" +
+                        "  id('com.opencastsoftware.gradle.bsp')\n" +
+                        "}\n" +
+                        "repositories {\n" +
+                        "  mavenCentral()" +
+                        "}\n" +
+                        "dependencies {\n" +
+                        "  implementation('org.scala-lang:scala-library:2.13.10')\n" +
+                        "}");
+
+        var workspace = fetchModel(projectDir, BspWorkspace.class);
+
+        assertThat(workspace.buildTargets(), hasItems(
+                // project build target
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir)))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java", "scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(true)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(true)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                // source set build targets
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "main")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java", "scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(true)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "test")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, contains("test")),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java", "scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(true)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(true)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                // language-specific build targets
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "java")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "testJava")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, contains("test")),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("java")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("jvm")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "scala")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, is(emptyIterable())),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("scala")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                ),
+                allOf(
+                        hasProperty("id", BspBuildTarget::id,
+                                hasProperty("uri", BspBuildTargetId::uri, equalTo(getBuildTargetId(projectDir, "testScala")))),
+                        hasProperty("displayName", BspBuildTarget::displayName, notNullValue()),
+                        hasProperty("baseDirectory", BspBuildTarget::baseDirectory, equalTo(projectDir.toPath().toRealPath().toUri())),
+                        hasProperty("tags", BspBuildTarget::tags, contains("test")),
+                        hasProperty("languageIds", BspBuildTarget::languageIds, contains("scala")),
+                        hasProperty("dependencies", BspBuildTarget::dependencies, is(emptyIterable())),
+                        hasProperty("capabilities", BspBuildTarget::capabilities, allOf(
+                                hasProperty("canCompile", BspBuildTargetCapabilities::canCompile, is(false)),
+                                hasProperty("canTest", BspBuildTargetCapabilities::canTest, is(false)),
+                                hasProperty("canRun", BspBuildTargetCapabilities::canRun, is(false)),
+                                hasProperty("canDebug", BspBuildTargetCapabilities::canDebug, is(false))
+                        )),
+                        hasProperty("dataKind", BspBuildTarget::dataKind, is("scala")),
+                        hasProperty("data", BspBuildTarget::data, is(notNullValue()))
+                )
         ));
     }
 
