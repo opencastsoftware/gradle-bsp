@@ -2,7 +2,6 @@ plugins {
     `java-gradle-plugin`
     `jacoco-report-aggregation`
     alias(libs.plugins.gradleJavaConventions)
-    // TODO: remove this once https://github.com/gradle/gradle/issues/17559 is fixed
     alias(libs.plugins.gradleBuildInfo)
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText:  © 2023 Opencast Software Europe Ltd <https://opencastsoftware.com>
+ * SPDX-FileCopyrightText:  © 2023-2024 Opencast Software Europe Ltd <https://opencastsoftware.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.opencastsoftware.gradle.bsp.server.util;
@@ -19,12 +19,12 @@ public class Conversions {
     }
 
     public static BuildTargetCapabilities toBspBuildTargetCapabilities(BspBuildTargetCapabilities capabilities) {
-        return new BuildTargetCapabilities(
-                capabilities.canCompile(),
-                capabilities.canTest(),
-                capabilities.canRun(),
-                capabilities.canDebug()
-        );
+        var bspCapabilities = new BuildTargetCapabilities();
+        bspCapabilities.setCanCompile(capabilities.canCompile());
+        bspCapabilities.setCanTest(capabilities.canTest());
+        bspCapabilities.setCanRun(capabilities.canRun());
+        bspCapabilities.setCanDebug(capabilities.canDebug());
+        return bspCapabilities;
     }
 
     public static BuildTarget toBspBuildTarget(BspBuildTarget buildTarget) {
@@ -67,9 +67,12 @@ public class Conversions {
 
     public static JvmBuildTarget toBspJvmBuildTarget(Serializable data) {
         try {
+            var bspJvmBuildTarget = new JvmBuildTarget();
             var javaHomeMethod = data.getClass().getDeclaredMethod("javaHome");
             var javaVersionMethod = data.getClass().getDeclaredMethod("javaVersion");
-            return new JvmBuildTarget(javaHomeMethod.invoke(data).toString(), (String) javaVersionMethod.invoke(data));
+            bspJvmBuildTarget.setJavaHome(javaHomeMethod.invoke(data).toString());
+            bspJvmBuildTarget.setJavaVersion((String) javaVersionMethod.invoke(data));
+            return bspJvmBuildTarget;
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             return null;
         }
