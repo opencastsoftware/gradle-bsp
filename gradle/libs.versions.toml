@@ -11,7 +11,7 @@ jsonJava = "20231013"
 junit = "5.10.0"
 junixSocket = "2.7.0"
 logback = "1.4.12"
-picocli = "4.7.4"
+picocli = "4.7.5"
 slf4j = "2.0.7"
 toStringVerifier = "1.4.8"
 
