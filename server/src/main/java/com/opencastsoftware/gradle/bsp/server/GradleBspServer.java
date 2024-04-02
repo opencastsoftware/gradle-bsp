@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText:  © 2023 Opencast Software Europe Ltd <https://opencastsoftware.com>
+ * SPDX-FileCopyrightText:  © 2023-2024 Opencast Software Europe Ltd <https://opencastsoftware.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.opencastsoftware.gradle.bsp.server;
@@ -489,7 +489,7 @@ public class GradleBspServer implements BuildServer {
     @Override
     public CompletableFuture<CleanCacheResult> buildTargetCleanCache(CleanCacheParams params) {
         return ifInitializedAsync(cancelToken -> {
-            var cleanResult = new CleanCacheResult(null, Boolean.TRUE);
+            var cleanResult = new CleanCacheResult(Boolean.TRUE);
 
             var targetUris = getTargetUris(params);
             var targetCleanTasks = getCleanTasksFrom(targetUris);
@@ -509,7 +509,6 @@ public class GradleBspServer implements BuildServer {
         });
     }
 
-    @Override
     public void onConnectWithClient(BuildClient client) {
         this.client = client;
     }
