@@ -1,4 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>opencastsoftware/renovate-config"]
+  "extends": [
+    "github>opencastsoftware/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "gradle",
+        "org.gradle:gradle-tooling-api"
+      ],
+      "allowedVersions": "<8.7"
+    }
+  ]
 }
