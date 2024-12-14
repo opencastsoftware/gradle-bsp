@@ -1,6 +1,6 @@
 [versions]
 bsp4j = "2.1.1"
-equalsVerifier = "3.16.1"
+equalsVerifier = "3.17.5"
 graalVmNativeImagePlugin = "0.10.1"
 gradleBuildInfo = "0.3.1"
 gradleJavaConventions = "0.1.4"
