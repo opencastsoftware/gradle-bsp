@@ -12,7 +12,7 @@ junit = "5.11.4"
 junixSocket = "2.10.1"
 logback = "1.5.17"
 picocli = "4.7.6"
-slf4j = "2.0.16"
+slf4j = "2.0.17"
 toStringVerifier = "1.4.8"
 
 [libraries]
