@@ -43,7 +43,7 @@ jobs:
           arguments: build --info
 
       - name: Upload Coverage Report
-        uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed # v4
+        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
