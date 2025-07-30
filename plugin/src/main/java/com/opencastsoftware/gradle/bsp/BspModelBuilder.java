@@ -1,12 +1,11 @@
 /*
- * SPDX-FileCopyrightText:  © 2023 Opencast Software Europe Ltd <https://opencastsoftware.com>
+ * SPDX-FileCopyrightText:  © 2023-2025 Opencast Software Europe Ltd <https://opencastsoftware.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 package com.opencastsoftware.gradle.bsp;
 
 import com.opencastsoftware.gradle.bsp.model.*;
 import org.gradle.api.Project;
-import org.gradle.api.attributes.TestSuiteType;
 import org.gradle.api.plugins.ApplicationPlugin;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.jvm.JvmTestSuite;
@@ -72,16 +71,10 @@ public abstract class BspModelBuilder {
         }
 
         var testSourceSets = getTestSourceSets(project);
-        var integrationTestSourceSets = getTestSourceSetsWithType(project, TestSuiteType.INTEGRATION_TEST);
-
         var isTest = testSourceSets.contains(sourceSet);
+
         if (isTest) {
             tags.add(TEST_TAG);
-        }
-
-        var isIntegrationTest = integrationTestSourceSets.contains(sourceSet);
-        if (isIntegrationTest) {
-            tags.add(INTEGRATION_TEST_TAG);
         }
 
         return tags;
@@ -123,18 +116,6 @@ public abstract class BspModelBuilder {
         return Optional.ofNullable(testingExtension)
                 .map(ext -> ext.getSuites()
                         .withType(JvmTestSuite.class).stream()
-                        .map(JvmTestSuite::getSources)
-                        .collect(Collectors.toSet()))
-                .orElse(Set.of());
-    }
-
-    protected Set<SourceSet> getTestSourceSetsWithType(Project project, String testSuiteType) {
-        var testingExtension = project.getExtensions().findByType(TestingExtension.class);
-
-        return Optional.ofNullable(testingExtension)
-                .map(ext -> ext.getSuites()
-                        .withType(JvmTestSuite.class).stream()
-                        .filter(suite -> suite.getTestType().get().equals(testSuiteType))
                         .map(JvmTestSuite::getSources)
                         .collect(Collectors.toSet()))
                 .orElse(Set.of());

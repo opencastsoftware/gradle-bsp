@@ -9,7 +9,7 @@
         "gradle",
         "org.gradle:gradle-tooling-api"
       ],
-      "allowedVersions": "<8.7"
+      "allowedVersions": "<8.14"
     }
   ]
 }
